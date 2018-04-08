@@ -1,0 +1,36 @@
+<html>
+	<head>
+	<title>Rockin Racer</title>
+		 <link rel="stylesheet" type="text/css" href="styles.css">
+		<script language="javascript" type="text/javascript" src="engine.js"></script>
+		<script language="javascript" type="text/javascript" src="myGameLibrary.js"></script>
+	</head>
+	<body onload="introVideo()">
+		<div id="introScreen">
+			<div id="firstButton" class="button" onclick="level1()">BEGIN!</div>
+		</div>
+		<div id="gameScreen"></div>
+		<div id="gameScreen2"></div>
+		<div id="btnDeath" onclick="level1()">Restart!</div>
+		<div id="btnDeath2" onclick="level2()">Restart!</div>
+		<div id="btnDeath3" onclick="level3()">Restart!</div>
+		<div id="btnContinue" onclick="level2()">Level 2!</div>
+		<div id="btnContinue2" onclick="level3()">Level 3!</div>
+		
+		<video id="Intro" onended="startButton()" width="1280" height="720" autoplay>
+				<source src="rockingintro.mp4" type="video/mp4">
+					your browser does not support the video tag.
+		</video>
+		<audio id="sndIntro" preload="auto">
+			<source src="sound/intro.mp3">
+		</audio>
+		<audio id="sndBackground" preload="auto">
+			<source src="sound/background.wav">
+		</audio>
+
+		<audio id="sndDriving" preload="auto">
+			<source src="sound/driving.mp3">
+		</audio>
+
+	</body>
+</html>

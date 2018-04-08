@@ -1,0 +1,289 @@
+
+		 #Intro{
+	 		position: absolute;
+		 }
+		#introScreen{
+			position: absolute;
+			z-index: 2;
+			text-align: center;
+			width: 800px;
+			height: 400px;
+			background-image: url("images/streetside.jpg");
+			background-repeat: no-repeat;
+			background-size: 0;
+			font-size: 24px;
+			font-weight: 800;
+			color: green;
+			margin-left: auto;
+			margin-right: auto;
+		} 
+		#gameScreen{
+
+			position: absolute;
+			background-color: black;
+			overflow: hidden;
+			margin-left: auto;
+			margin-right: auto;
+		}
+
+		#gameScreen2{
+
+			position: absolute;
+			background-color: black;
+			overflow: hidden;
+			margin-left: 300px;
+			
+		}
+
+
+
+		#gameWindow{
+			
+			background-color: black;
+			margin: auto;
+		}
+
+		#videoWindow{
+			position: relative;
+			width: 1280px;
+			height: 720px;
+			background-color: black;
+			margin: auto;
+		}
+
+		video{
+			position: absolute;
+		}
+
+
+		.gameObject{
+						position: absolute;
+						z-index: 1;
+						background-color: transparent;
+					}
+
+	#btnDeath{
+		position: absolute;
+		left: 530px;
+		top: 100px;
+
+		display: none;
+
+		background-color: rgba(255, 255, 255, 0.6);
+		color: black;
+
+		padding: 20px;
+		padding-top: 10px;
+		padding-bottom: 10px;
+		border-radius: 10px;
+
+		text-align: center;
+		font-size: 14pt; 
+
+		cursor: hand;
+		cursor: pointer;
+
+		z-index: 10;
+		-webkit-touch-callout: none;
+		-webkit-user-select: none;
+		-khtml-user-select: none;
+		-moz-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
+
+	}
+
+	#btnDeath2{
+		position: absolute;
+		left: 530px;
+		top: 100px;
+
+		display: none;
+
+		background-color: rgba(255, 255, 255, 0.6);
+		color: black;
+
+		padding: 20px;
+		padding-top: 10px;
+		padding-bottom: 10px;
+		border-radius: 10px;
+
+		text-align: center;
+		font-size: 14pt; 
+
+		cursor: hand;
+		cursor: pointer;
+
+		z-index: 10;
+		-webkit-touch-callout: none;
+		-webkit-user-select: none;
+		-khtml-user-select: none;
+		-moz-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
+
+	}
+
+	#btnDeath3{
+		position: absolute;
+		left: 530px;
+		top: 100px;
+
+		display: none;
+
+		background-color: rgba(255, 255, 255, 0.6);
+		color: black;
+
+		padding: 20px;
+		padding-top: 10px;
+		padding-bottom: 10px;
+		border-radius: 10px;
+
+		text-align: center;
+		font-size: 14pt; 
+
+		cursor: hand;
+		cursor: pointer;
+
+		z-index: 10;
+		-webkit-touch-callout: none;
+		-webkit-user-select: none;
+		-khtml-user-select: none;
+		-moz-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
+
+	}
+
+	.button{
+		background-color: red;
+		color: yellow;	
+		padding: 10px;
+		margin-top: 450px;
+		margin-left: 625px;
+		border-radius: 8px;
+		cursor: hand;
+		cursor: pointer;
+		width: 90px;
+		text-align: center;
+		user-select: none;
+		-o-user-select:none;
+		-moz-user-select: none;
+		-khtml-user-select: none;
+		-webkit-user-select: none;
+		}
+	.button:hover{
+		background-color: black;
+		color: red;
+		}
+	
+	#btnContinue{
+		position: absolute;
+		left: 530px;
+		top: 100px;
+
+		display: none;
+
+		background-color: rgba(255, 255, 255, 0.6);
+		color: black;
+
+		padding: 20px;
+		padding-top: 10px;
+		padding-bottom: 10px;
+		border-radius: 10px;
+
+		text-align: center;
+		font-size: 14pt; 
+
+		cursor: hand;
+		cursor: pointer;
+
+		z-index: 10;
+		-webkit-touch-callout: none;
+		-webkit-user-select: none;
+		-khtml-user-select: none;
+		-moz-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
+
+	}
+
+	#btnContinue{
+		position: absolute;
+		left: 530px;
+		top: 100px;
+
+		display: none;
+
+		background-color: rgba(255, 255, 255, 0.6);
+		color: black;
+
+		padding: 20px;
+		padding-top: 10px;
+		padding-bottom: 10px;
+		border-radius: 10px;
+
+		text-align: center;
+		font-size: 14pt; 
+
+		cursor: hand;
+		cursor: pointer;
+
+		z-index: 10;
+		-webkit-touch-callout: none;
+		-webkit-user-select: none;
+		-khtml-user-select: none;
+		-moz-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
+
+	}
+
+
+
+	#btnContinue2{
+		position: absolute;
+		left: 530px;
+		top: 100px;
+
+		display: none;
+
+		background-color: rgba(255, 255, 255, 0.6);
+		color: black;
+
+		padding: 20px;
+		padding-top: 10px;
+		padding-bottom: 10px;
+		border-radius: 10px;
+
+		text-align: center;
+		font-size: 14pt; 
+
+		cursor: hand;
+		cursor: pointer;
+
+		z-index: 10;
+		-webkit-touch-callout: none;
+		-webkit-user-select: none;
+		-khtml-user-select: none;
+		-moz-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
+
+	}
+	#btnContinue:hover{
+		background-color: rgba(255, 255, 255, 0.9);
+	}
+	#btnContinue2:hover{
+		background-color: rgba(255, 255, 255, 0.9);
+	}
+	#btnDeath:hover{
+		background-color: rgba(255, 255, 255, 0.9);
+	}
+	#btnDeath2:hover{
+		background-color: rgba(255, 255, 255, 0.9);
+	}
+	#btnDeath3:hover{
+		background-color: rgba(255, 255, 255, 0.9);
+	}
+	
