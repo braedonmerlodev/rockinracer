@@ -50,6 +50,7 @@ body {
 	background-image: url("streetside.jpg");
 	background-repeat: no-repeat;
 	background-size: cover;
+	background-position: center center;
 	pointer-events: none;
 }
 
@@ -276,12 +277,19 @@ body {
 	position: absolute;
 	z-index: 1;
 	pointer-events: none;
+	image-rendering: auto;
+	transform: translateZ(0);
+	will-change: left, top;
 }
 
 .finishObject {
 	position: absolute;
-	z-index: 3;
+	z-index: 7;
 	pointer-events: none;
+	opacity: 0;
+	transform: translateZ(0);
+	will-change: opacity;
+	transition: opacity 0.25s ease-out;
 }
 
 .oil-slick {

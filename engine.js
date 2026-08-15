@@ -30,7 +30,8 @@ var shieldAuraEl = null;
 
 // Track Progress Tracking
 var stageTotalDistance = 2800;
-var stageCurrentDistance = 0;
+var stageRemainingDistance = 2800;
+var isFinalStretch = false;
 
 // Controls State (WASD & Arrow Keys + Spacebar)
 var leftArrowDown = false;
@@ -59,8 +60,10 @@ const RIVAL_VARIANTS = [
 	{ primary: '#e11d48', secondary: '#ffffff', name: 'Speed Demon' }
 ];
 
-// Web Audio API Synthesizer (100% Reliable Sound FX)
+// Web Audio API Synthesizer (Realistic Multi-Layer Audio Engine)
 var audioCtx = null;
+var isNitroAudioActive = false;
+
 function getAudioCtx() {
 	if (!audioCtx) {
 		var AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -77,72 +80,324 @@ function playSynthSound(type) {
 
 	try {
 		var now = ctx.currentTime;
-		if (type === 'pickup') {
+		if (type === 'nitro_start' || type === 'nitro') {
+			if (isNitroAudioActive) return;
+			isNitroAudioActive = true;
+
+			// Layer 1: Twin-Turbo Spool Whistle (1200Hz -> 3800Hz)
+			var spoolOsc = ctx.createOscillator();
+			var spoolGain = ctx.createGain();
+			var spoolFilter = ctx.createBiquadFilter();
+			spoolFilter.type = 'bandpass';
+			spoolFilter.frequency.setValueAtTime(1400, now);
+			spoolFilter.frequency.exponentialRampToValueAtTime(3800, now + 0.28);
+			spoolFilter.Q.setValueAtTime(8, now);
+
+			spoolOsc.type = 'sine';
+			spoolOsc.frequency.setValueAtTime(1200, now);
+			spoolOsc.frequency.exponentialRampToValueAtTime(3600, now + 0.28);
+
+			spoolGain.gain.setValueAtTime(0.35, now);
+			spoolGain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+
+			spoolOsc.connect(spoolFilter);
+			spoolFilter.connect(spoolGain);
+			spoolGain.connect(ctx.destination);
+			spoolOsc.start(now);
+			spoolOsc.stop(now + 0.35);
+
+			// Layer 2: Nitrous Pressurized Gas Hiss (High-pass noise)
+			var bufferSize = Math.floor(ctx.sampleRate * 0.4);
+			var buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+			var data = buffer.getChannelData(0);
+			for (var i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+			var hissNode = ctx.createBufferSource();
+			hissNode.buffer = buffer;
+			var hissFilter = ctx.createBiquadFilter();
+			hissFilter.type = 'highpass';
+			hissFilter.frequency.setValueAtTime(2600, now);
+
+			var hissGain = ctx.createGain();
+			hissGain.gain.setValueAtTime(0.35, now);
+			hissGain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+			hissNode.connect(hissFilter);
+			hissFilter.connect(hissGain);
+			hissGain.connect(ctx.destination);
+			hissNode.start(now);
+
+			// Layer 3: Combustion Jet Rumble (Low-frequency growl)
+			var rumbleOsc = ctx.createOscillator();
+			var rumbleGain = ctx.createGain();
+			var rumbleFilter = ctx.createBiquadFilter();
+			rumbleFilter.type = 'lowpass';
+			rumbleFilter.frequency.setValueAtTime(220, now);
+
+			rumbleOsc.type = 'sawtooth';
+			rumbleOsc.frequency.setValueAtTime(75, now);
+			rumbleOsc.frequency.linearRampToValueAtTime(140, now + 0.3);
+
+			rumbleGain.gain.setValueAtTime(0.4, now);
+			rumbleGain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+
+			rumbleOsc.connect(rumbleFilter);
+			rumbleFilter.connect(rumbleGain);
+			rumbleGain.connect(ctx.destination);
+			rumbleOsc.start(now);
+			rumbleOsc.stop(now + 0.5);
+
+		} else if (type === 'nitro_stop') {
+			if (!isNitroAudioActive) return;
+			isNitroAudioActive = false;
+
+			// Blow-off Valve Pssshht
+			var bufferSize = Math.floor(ctx.sampleRate * 0.25);
+			var buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+			var data = buffer.getChannelData(0);
+			for (var i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+			var bovNode = ctx.createBufferSource();
+			bovNode.buffer = buffer;
+			var bovFilter = ctx.createBiquadFilter();
+			bovFilter.type = 'bandpass';
+			bovFilter.frequency.setValueAtTime(3200, now);
+			bovFilter.frequency.exponentialRampToValueAtTime(1600, now + 0.22);
+			bovFilter.Q.setValueAtTime(4, now);
+
+			var bovGain = ctx.createGain();
+			bovGain.gain.setValueAtTime(0.35, now);
+			bovGain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+
+			bovNode.connect(bovFilter);
+			bovFilter.connect(bovGain);
+			bovGain.connect(ctx.destination);
+			bovNode.start(now);
+
+		} else if (type === 'smash') {
+			// Layer 1: Kinetic Body Slam Punch (Fast pitch drop 340Hz -> 75Hz)
+			var bodyOsc = ctx.createOscillator();
+			var bodyGain = ctx.createGain();
+			bodyOsc.type = 'sine';
+			bodyOsc.frequency.setValueAtTime(340, now);
+			bodyOsc.frequency.exponentialRampToValueAtTime(75, now + 0.15);
+			bodyGain.gain.setValueAtTime(0.6, now);
+			bodyGain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
+			bodyOsc.connect(bodyGain);
+			bodyGain.connect(ctx.destination);
+			bodyOsc.start(now);
+			bodyOsc.stop(now + 0.18);
+
+			// Layer 2: High-Speed Tire Screech Squeal (Bandpass sweep)
+			var screechOsc = ctx.createOscillator();
+			var screechGain = ctx.createGain();
+			var screechFilter = ctx.createBiquadFilter();
+			screechFilter.type = 'bandpass';
+			screechFilter.frequency.setValueAtTime(1100, now);
+			screechFilter.frequency.exponentialRampToValueAtTime(600, now + 0.22);
+			screechFilter.Q.setValueAtTime(6, now);
+
+			screechOsc.type = 'sawtooth';
+			screechOsc.frequency.setValueAtTime(950, now);
+			screechOsc.frequency.linearRampToValueAtTime(1350, now + 0.08);
+			screechOsc.frequency.exponentialRampToValueAtTime(500, now + 0.22);
+
+			screechGain.gain.setValueAtTime(0.35, now);
+			screechGain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+
+			screechOsc.connect(screechFilter);
+			screechFilter.connect(screechGain);
+			screechGain.connect(ctx.destination);
+			screechOsc.start(now);
+			screechOsc.stop(now + 0.22);
+
+			// Layer 3: Metallic Crunch Hit
+			var bufferSize = Math.floor(ctx.sampleRate * 0.2);
+			var buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+			var data = buffer.getChannelData(0);
+			for (var i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+			var hitNode = ctx.createBufferSource();
+			hitNode.buffer = buffer;
+			var hitFilter = ctx.createBiquadFilter();
+			hitFilter.type = 'bandpass';
+			hitFilter.frequency.setValueAtTime(1400, now);
+			hitFilter.Q.setValueAtTime(4, now);
+
+			var hitGain = ctx.createGain();
+			hitGain.gain.setValueAtTime(0.5, now);
+			hitGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+
+			hitNode.connect(hitFilter);
+			hitFilter.connect(hitGain);
+			hitGain.connect(ctx.destination);
+			hitNode.start(now);
+
+		} else if (type === 'crash') {
+			// Layer 1: Sub-bass explosion shockwave (140Hz -> 28Hz)
+			var subOsc = ctx.createOscillator();
+			var subGain = ctx.createGain();
+			subOsc.type = 'sine';
+			subOsc.frequency.setValueAtTime(140, now);
+			subOsc.frequency.exponentialRampToValueAtTime(28, now + 0.45);
+			subGain.gain.setValueAtTime(0.65, now);
+			subGain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+			subOsc.connect(subGain);
+			subGain.connect(ctx.destination);
+			subOsc.start(now);
+			subOsc.stop(now + 0.45);
+
+			// Layer 2: Metal Crunch & Deformation (Noise through resonant bandpass)
+			var bufferSize = Math.floor(ctx.sampleRate * 0.5);
+			var buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+			var data = buffer.getChannelData(0);
+			for (var i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+			var crunchNode = ctx.createBufferSource();
+			crunchNode.buffer = buffer;
+			var crunchFilter = ctx.createBiquadFilter();
+			crunchFilter.type = 'bandpass';
+			crunchFilter.frequency.setValueAtTime(450, now);
+			crunchFilter.frequency.exponentialRampToValueAtTime(180, now + 0.4);
+			crunchFilter.Q.setValueAtTime(3, now);
+
+			var crunchGain = ctx.createGain();
+			crunchGain.gain.setValueAtTime(0.7, now);
+			crunchGain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+
+			crunchNode.connect(crunchFilter);
+			crunchFilter.connect(crunchGain);
+			crunchGain.connect(ctx.destination);
+			crunchNode.start(now);
+
+			// Layer 3: Glass Shatter & Debris (High-frequency noise burst)
+			var glassNode = ctx.createBufferSource();
+			glassNode.buffer = buffer;
+			var glassFilter = ctx.createBiquadFilter();
+			glassFilter.type = 'highpass';
+			glassFilter.frequency.setValueAtTime(4200, now);
+
+			var glassGain = ctx.createGain();
+			glassGain.gain.setValueAtTime(0.45, now);
+			glassGain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+
+			glassNode.connect(glassFilter);
+			glassFilter.connect(glassGain);
+			glassGain.connect(ctx.destination);
+			glassNode.start(now);
+
+			// Layer 4: Twisted Metal Discord (Beating sawtooth frequencies)
+			[180, 195, 230].forEach((f, idx) => {
+				var osc = ctx.createOscillator();
+				var g = ctx.createGain();
+				osc.type = 'sawtooth';
+				osc.frequency.setValueAtTime(f, now);
+				osc.frequency.exponentialRampToValueAtTime(f * 0.4, now + 0.3);
+				g.gain.setValueAtTime(0.25, now);
+				g.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+				osc.connect(g);
+				g.connect(ctx.destination);
+				osc.start(now);
+				osc.stop(now + 0.3);
+			});
+
+		} else if (type === 'win') {
+			// Layer 1: High-Speed Doppler Engine Flyby Whoosh
+			var bufferSize = Math.floor(ctx.sampleRate * 0.85);
+			var buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+			var data = buffer.getChannelData(0);
+			for (var i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+			var whooshNode = ctx.createBufferSource();
+			whooshNode.buffer = buffer;
+			var whooshFilter = ctx.createBiquadFilter();
+			whooshFilter.type = 'bandpass';
+			whooshFilter.frequency.setValueAtTime(1200, now);
+			whooshFilter.frequency.exponentialRampToValueAtTime(320, now + 0.7);
+			whooshFilter.Q.setValueAtTime(3, now);
+
+			var whooshGain = ctx.createGain();
+			whooshGain.gain.setValueAtTime(0.05, now);
+			whooshGain.gain.linearRampToValueAtTime(0.55, now + 0.25);
+			whooshGain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+
+			whooshNode.connect(whooshFilter);
+			whooshFilter.connect(whooshGain);
+			whooshGain.connect(ctx.destination);
+			whooshNode.start(now);
+
+			// Doppler Tone (Engine whine passing by)
+			var dopOsc = ctx.createOscillator();
+			var dopGain = ctx.createGain();
+			dopOsc.type = 'sawtooth';
+			dopOsc.frequency.setValueAtTime(720, now);
+			dopOsc.frequency.exponentialRampToValueAtTime(240, now + 0.7);
+			dopGain.gain.setValueAtTime(0.05, now);
+			dopGain.gain.linearRampToValueAtTime(0.35, now + 0.22);
+			dopGain.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
+			dopOsc.connect(dopGain);
+			dopGain.connect(ctx.destination);
+			dopOsc.start(now);
+			dopOsc.stop(now + 0.7);
+
+			// Layer 2: Authentic Trackside Checkered Air-Horn Blast (F#4, A#4, C#5)
+			[370, 466, 554].forEach(f => {
+				var horn = ctx.createOscillator();
+				var hornGain = ctx.createGain();
+				horn.type = 'sawtooth';
+				horn.frequency.setValueAtTime(f, now + 0.2);
+				hornGain.gain.setValueAtTime(0.01, now + 0.2);
+				hornGain.gain.linearRampToValueAtTime(0.28, now + 0.28);
+				hornGain.gain.setValueAtTime(0.25, now + 0.75);
+				hornGain.gain.exponentialRampToValueAtTime(0.01, now + 1.05);
+				horn.connect(hornGain);
+				hornGain.connect(ctx.destination);
+				horn.start(now + 0.2);
+				horn.stop(now + 1.05);
+			});
+
+			// Layer 3: Triumphant Major Brass Victory Fanfare (C5, E5, G5, C6)
+			var notes = [
+				{ f: 523.25, t: 0.15, d: 0.25 },
+				{ f: 659.25, t: 0.35, d: 0.25 },
+				{ f: 783.99, t: 0.55, d: 0.3 },
+				{ f: 1046.50, t: 0.80, d: 0.65 }
+			];
+			notes.forEach(n => {
+				var osc = ctx.createOscillator();
+				var g = ctx.createGain();
+				osc.type = 'triangle';
+				osc.frequency.setValueAtTime(n.f, now + n.t);
+				g.gain.setValueAtTime(0.01, now + n.t);
+				g.gain.linearRampToValueAtTime(0.35, now + n.t + 0.04);
+				g.gain.exponentialRampToValueAtTime(0.01, now + n.t + n.d);
+				osc.connect(g);
+				g.connect(ctx.destination);
+				osc.start(now + n.t);
+				osc.stop(now + n.t + n.d);
+			});
+
+		} else if (type === 'pickup') {
 			var osc = ctx.createOscillator();
 			var gain = ctx.createGain();
 			osc.type = 'triangle';
-			osc.frequency.setValueAtTime(523, now);
-			osc.frequency.exponentialRampToValueAtTime(784, now + 0.12);
+			osc.frequency.setValueAtTime(587, now);
+			osc.frequency.exponentialRampToValueAtTime(880, now + 0.12);
 			gain.gain.setValueAtTime(0.3, now);
 			gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
 			osc.connect(gain); gain.connect(ctx.destination);
 			osc.start(now); osc.stop(now + 0.12);
+
 		} else if (type === 'shield') {
 			var osc = ctx.createOscillator();
 			var gain = ctx.createGain();
 			osc.type = 'sine';
-			osc.frequency.setValueAtTime(440, now);
-			osc.frequency.exponentialRampToValueAtTime(880, now + 0.2);
-			gain.gain.setValueAtTime(0.4, now);
-			gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+			osc.frequency.setValueAtTime(523, now);
+			osc.frequency.exponentialRampToValueAtTime(1046, now + 0.22);
+			gain.gain.setValueAtTime(0.35, now);
+			gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
 			osc.connect(gain); gain.connect(ctx.destination);
-			osc.start(now); osc.stop(now + 0.2);
-		} else if (type === 'nitro') {
-			var osc = ctx.createOscillator();
-			var gain = ctx.createGain();
-			osc.type = 'sawtooth';
-			osc.frequency.setValueAtTime(220, now);
-			osc.frequency.exponentialRampToValueAtTime(110, now + 0.15);
-			gain.gain.setValueAtTime(0.2, now);
-			gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-			osc.connect(gain); gain.connect(ctx.destination);
-			osc.start(now); osc.stop(now + 0.15);
-		} else if (type === 'smash') {
-			var freqs = [350, 200, 100];
-			freqs.forEach((f, idx) => {
-				var osc = ctx.createOscillator();
-				var gain = ctx.createGain();
-				osc.type = 'sawtooth';
-				osc.frequency.setValueAtTime(f, now + idx * 0.05);
-				gain.gain.setValueAtTime(0.4, now + idx * 0.05);
-				gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.05 + 0.15);
-				osc.connect(gain); gain.connect(ctx.destination);
-				osc.start(now + idx * 0.05); osc.stop(now + idx * 0.05 + 0.15);
-			});
-		} else if (type === 'crash') {
-			var bufferSize = ctx.sampleRate * 0.35;
-			var buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-			var data = buffer.getChannelData(0);
-			for (var i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-			var noise = ctx.createBufferSource();
-			noise.buffer = buffer;
-			var gain = ctx.createGain();
-			gain.gain.setValueAtTime(0.55, now);
-			gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
-			noise.connect(gain); gain.connect(ctx.destination);
-			noise.start(now);
-		} else if (type === 'win') {
-			var freqs = [523, 659, 784, 1046, 1318];
-			freqs.forEach((f, idx) => {
-				var osc = ctx.createOscillator();
-				var gain = ctx.createGain();
-				osc.type = 'triangle';
-				osc.frequency.setValueAtTime(f, now + idx * 0.08);
-				gain.gain.setValueAtTime(0.35, now + idx * 0.08);
-				gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.08 + 0.22);
-				osc.connect(gain); gain.connect(ctx.destination);
-				osc.start(now + idx * 0.08); osc.stop(now + idx * 0.08 + 0.22);
-			});
+			osc.start(now); osc.stop(now + 0.22);
 		}
 	} catch (e) { console.log('Synth sound catch:', e); }
 }
@@ -232,6 +487,68 @@ function getConeSVG(dir) {
 				<circle cx="30" cy="30" r="12" fill="#ffffff" opacity="0.9"/>
 				<circle cx="30" cy="30" r="6" fill="#ff5500"/>
 			</g>
+		</svg>`;
+	}
+}
+
+function getFinishLineSVG(dir) {
+	if (dir === 'top') {
+		var tiles = '';
+		for (var i = 0; i < 18; i++) {
+			var x = 20 + i * 23;
+			var fill1 = (i % 2 === 0) ? '#ffffff' : '#111827';
+			var fill2 = (i % 2 === 0) ? '#111827' : '#ffffff';
+			tiles += `<rect x="${x}" y="36" width="23" height="18" fill="${fill1}"/>
+			          <rect x="${x}" y="54" width="23" height="18" fill="${fill2}"/>`;
+		}
+		return `<svg viewBox="0 0 450 100" width="450" height="100" style="display:block; width:100%; height:100%;">
+			<!-- Side Tower Beacons -->
+			<rect x="2" y="10" width="16" height="80" rx="3" fill="#0f172a" stroke="#00e5ff" stroke-width="2"/>
+			<circle cx="10" cy="22" r="5" fill="#ff0055"/>
+			<circle cx="10" cy="50" r="5" fill="#ffea00"/>
+			<circle cx="10" cy="78" r="5" fill="#00ff66"/>
+			
+			<rect x="432" y="10" width="16" height="80" rx="3" fill="#0f172a" stroke="#00e5ff" stroke-width="2"/>
+			<circle cx="440" cy="22" r="5" fill="#ff0055"/>
+			<circle cx="440" cy="50" r="5" fill="#ffea00"/>
+			<circle cx="440" cy="78" r="5" fill="#00ff66"/>
+
+			<!-- Overhead Truss Bridge -->
+			<rect x="18" y="24" width="414" height="52" rx="4" fill="#090d16" stroke="#00e5ff" stroke-width="2"/>
+			
+			<!-- Checkered Grid -->
+			${tiles}
+
+			<!-- Gold Border Lines -->
+			<line x1="20" y1="36" x2="430" y2="36" stroke="#ffea00" stroke-width="2"/>
+			<line x1="20" y1="72" x2="430" y2="72" stroke="#ffea00" stroke-width="2"/>
+
+			<!-- Central FINISH Header Badge -->
+			<rect x="160" y="4" width="130" height="26" rx="6" fill="#ff0055" stroke="#ffff00" stroke-width="2"/>
+			<text x="225" y="22" text-anchor="middle" font-family="'Press Start 2P', monospace" font-size="12" fill="#ffff00" font-weight="bold" letter-spacing="2">FINISH</text>
+		</svg>`;
+	} else {
+		var tiles = '';
+		for (var j = 0; j < 24; j++) {
+			var y = 20 + j * 23.5;
+			var fill1 = (j % 2 === 0) ? '#ffffff' : '#111827';
+			var fill2 = (j % 2 === 0) ? '#111827' : '#ffffff';
+			tiles += `<rect x="50" y="${y}" width="20" height="23.5" fill="${fill1}"/>
+			          <rect x="70" y="${y}" width="20" height="23.5" fill="${fill2}"/>`;
+		}
+		return `<svg viewBox="0 0 140 600" width="140" height="600" style="display:block; width:100%; height:100%;">
+			<rect x="10" y="4" width="120" height="16" rx="3" fill="#0f172a" stroke="#00e5ff" stroke-width="2"/>
+			<rect x="10" y="580" width="120" height="16" rx="3" fill="#0f172a" stroke="#00e5ff" stroke-width="2"/>
+
+			<rect x="44" y="16" width="52" height="568" rx="4" fill="#090d16" stroke="#00e5ff" stroke-width="2"/>
+
+			${tiles}
+
+			<line x1="50" y1="20" x2="50" y2="580" stroke="#ffea00" stroke-width="2"/>
+			<line x1="90" y1="20" x2="90" y2="580" stroke="#ffea00" stroke-width="2"/>
+
+			<rect x="15" y="270" width="110" height="40" rx="6" fill="#ff0055" stroke="#ffff00" stroke-width="2"/>
+			<text x="70" y="296" text-anchor="middle" font-family="'Press Start 2P', monospace" font-size="11" fill="#ffff00" font-weight="bold" letter-spacing="1">FINISH</text>
 		</svg>`;
 	}
 }
@@ -467,6 +784,21 @@ function showStageBanner(lvl) {
 	}, 1300);
 }
 
+function showFinalStretchBanner() {
+	var banner = document.getElementById('stageBanner');
+	var bannerText = document.getElementById('stageBannerText');
+	var bannerSub = document.getElementById('stageBannerSub');
+	if (!banner) return;
+
+	if (bannerText) bannerText.innerText = '🏁 FINAL STRETCH!';
+	if (bannerSub) bannerSub.innerText = 'CROSS THE CHECKERED LINE TO WIN!';
+
+	banner.classList.add('show');
+	setTimeout(function() {
+		banner.classList.remove('show');
+	}, 1400);
+}
+
 function startCampaign() {
 	getAudioCtx();
 	currentLevel = 1;
@@ -522,7 +854,6 @@ function spawnExplosionParticles(x, y) {
 }
 
 function spawnNitroParticles(x, y, dir) {
-	playSynthSound('nitro');
 	var c = CAR_COLORS[selectedCar] ? CAR_COLORS[selectedCar].primary : '#00e5ff';
 	for (var i = 0; i < 4; i++) {
 		var spread = (Math.random() - 0.5) * 8;
@@ -713,6 +1044,8 @@ function startStage(lvlNum) {
 	var isVertical = (currentLevel % 2 === 0);
 	var baseSpeed = 13 + (currentLevel * 0.35);
 	stageTotalDistance = 2800 + (currentLevel * 220);
+	stageRemainingDistance = stageTotalDistance;
+	isFinalStretch = false;
 	
 	var coneCount = Math.min(9, 4 + Math.floor(currentLevel / 6));
 	var oilCount = currentLevel >= 2 ? Math.min(4, 1 + Math.floor(currentLevel / 6)) : 0;
@@ -729,11 +1062,11 @@ function startStage(lvlNum) {
 		gameScreen2.style.height = GS_HEIGHT2 + 'px';
 
 		bg1 = document.createElement('IMG'); bg1.className = 'bgObject'; bg1.src = 'streetvert.jpg';
-		bg1.style.width = '450px'; bg1.style.height = '1422px'; bg1.style.left = '0px'; bg1.style.top = '0px';
+		bg1.style.width = '450px'; bg1.style.height = '600px'; bg1.style.left = '0px'; bg1.style.top = '0px';
 		gameScreen2.appendChild(bg1);
 
 		bg2 = document.createElement('IMG'); bg2.className = 'bgObject'; bg2.src = 'streetvert.jpg';
-		bg2.style.width = '450px'; bg2.style.height = '1422px'; bg2.style.left = '0px'; bg2.style.top = '-1422px';
+		bg2.style.width = '450px'; bg2.style.height = '600px'; bg2.style.left = '0px'; bg2.style.top = '-600px';
 		gameScreen2.appendChild(bg2);
 
 		// Top-Down Player Car (Aspect ratio 44:88)
@@ -774,10 +1107,15 @@ function startStage(lvlNum) {
 			placePowerup(pup, true, i, baseSpeed); powerups[i] = pup;
 		}
 
-		var finishLine = new Image(); finishLine.className = 'finishObject';
-		finishLine.style.width = '450px'; finishLine.style.height = '200px'; finishLine.src = 'finishvert.gif';
+		var finishLine = document.createElement('div');
+		finishLine.className = 'finishObject';
+		finishLine.style.width = '450px';
+		finishLine.style.height = '100px';
+		finishLine.style.left = '0px';
+		finishLine.style.top = '0px';
+		finishLine.style.opacity = '0';
+		finishLine.innerHTML = getFinishLineSVG('top');
 		gameScreen2.appendChild(finishLine);
-		placeFinishLineVertical(finishLine, -stageTotalDistance, baseSpeed);
 		finish[1] = finishLine;
 
 		gameTimer = setInterval(function() { gameloopVerticalProgressive(baseSpeed); }, 30);
@@ -835,10 +1173,15 @@ function startStage(lvlNum) {
 			placePowerup(pup, false, i, baseSpeed); powerups[i] = pup;
 		}
 
-		var finishLine = new Image(); finishLine.className = 'finishObject';
-		finishLine.style.width = '250px'; finishLine.style.height = '600px'; finishLine.src = 'finish.gif';
+		var finishLine = document.createElement('div');
+		finishLine.className = 'finishObject';
+		finishLine.style.width = '140px';
+		finishLine.style.height = '600px';
+		finishLine.style.left = '910px';
+		finishLine.style.top = '0px';
+		finishLine.style.opacity = '0';
+		finishLine.innerHTML = getFinishLineSVG('side');
 		gameScreen.appendChild(finishLine);
-		placeFinishLineHorizontal(finishLine, stageTotalDistance, baseSpeed);
 		finish[0] = finishLine;
 
 		gameTimer = setInterval(function() { gameloopHorizontalProgressive(baseSpeed); }, 30);
@@ -870,8 +1213,8 @@ function placeConeVertical(c, index, baseSpeed) {
 	c.style.top = ((index !== undefined) ? (-300 - index * 280) : (Math.floor(Math.random() * 400) - 1000)) + 'px';
 }
 
-function explode(obj) {
-	playSynthSound('crash');
+function explode(obj, soundType) {
+	playSynthSound(soundType || 'crash');
 	var explosion = document.createElement('IMG');
 	explosion.src = 'explosion.gif?x=' + Date.now();
 	explosion.className = 'gameObject';
@@ -883,7 +1226,8 @@ function explode(obj) {
 }
 
 function handleCrash() {
-	explode(car);
+	if (isNitroAudioActive) playSynthSound('nitro_stop');
+	explode(car, 'crash');
 	car.style.top = '-1000px';
 	if (shieldAuraEl) shieldAuraEl.style.display = 'none';
 	clearInterval(gameTimer);
@@ -905,6 +1249,7 @@ function handleCrash() {
 }
 
 function handleStageClear() {
+	if (isNitroAudioActive) playSynthSound('nitro_stop');
 	clearInterval(gameTimer);
 	isGameActive = false;
 	playSynthSound('win');
@@ -959,10 +1304,14 @@ function gameloopHorizontalProgressive(baseSpeed) {
 		curSpeedMult = 1.75;
 		nitro = Math.max(0, nitro - 1.8);
 		updateNitroDisplay();
+		if (!isNitroAudioActive) playSynthSound('nitro_start');
 		spawnNitroParticles(parseInt(car.style.left), parseInt(car.style.top) + 22, 'left');
-	} else if (nitro < 100) {
-		nitro = Math.min(100, nitro + rechargeRate);
-		updateNitroDisplay();
+	} else {
+		if (isNitroAudioActive) playSynthSound('nitro_stop');
+		if (nitro < 100) {
+			nitro = Math.min(100, nitro + rechargeRate);
+			updateNitroDisplay();
+		}
 	}
 
 	var timeSlowMult = isTimeSlowActive ? 0.4 : 1.0;
@@ -990,22 +1339,35 @@ function gameloopHorizontalProgressive(baseSpeed) {
 	for (var i = 0; i < powerups.length; i++) {
 		var pup = powerups[i];
 		var newX = parseInt(pup.style.left) - (pup.speed * curSpeedMult * timeSlowMult);
-		if (newX < -60) placePowerup(pup, false, i, baseSpeed);
-		else pup.style.left = newX + 'px';
+		if (newX < -60) {
+			if (!isFinalStretch) placePowerup(pup, false, i, baseSpeed);
+			else pup.style.left = '-999px';
+		} else {
+			pup.style.left = newX + 'px';
+		}
 
-		if (hittest(pup, car)) { handlePowerupPickup(pup); placePowerup(pup, false, i, baseSpeed); }
+		if (hittest(pup, car)) { 
+			handlePowerupPickup(pup); 
+			if (!isFinalStretch) placePowerup(pup, false, i, baseSpeed);
+			else pup.style.left = '-999px';
+		}
 	}
 
 	// Oil Slicks
 	for (var i = 0; i < oilSlicks.length; i++) {
 		var slick = oilSlicks[i];
 		var newX = parseInt(slick.style.left) - (slick.speed * curSpeedMult * timeSlowMult);
-		if (newX < -80) placeOilSlick(slick, false, i, baseSpeed);
-		else slick.style.left = newX + 'px';
+		if (newX < -80) {
+			if (!isFinalStretch) placeOilSlick(slick, false, i, baseSpeed);
+			else slick.style.left = '-999px';
+		} else {
+			slick.style.left = newX + 'px';
+		}
 
 		if (hittest(slick, car)) { 
 			if (!isBoosting && !hasShield) triggerOilSpinout(); 
-			placeOilSlick(slick, false, i, baseSpeed); 
+			if (!isFinalStretch) placeOilSlick(slick, false, i, baseSpeed);
+			else slick.style.left = '-999px';
 		}
 	}
 
@@ -1026,25 +1388,29 @@ function gameloopHorizontalProgressive(baseSpeed) {
 			rc.style.top = (curY + (rc.targetY > curY ? 3 : -3)) + 'px';
 		}
 
-		if (newX < -100) placeRivalCarHorizontal(rc, i, baseSpeed);
-		else rc.style.left = newX + 'px';
+		if (newX < -100) {
+			if (!isFinalStretch) placeRivalCarHorizontal(rc, i, baseSpeed);
+			else rc.style.left = '-999px';
+		} else {
+			rc.style.left = newX + 'px';
+		}
 
 		if (hittest(rc, car)) {
 			if (isBoosting) {
-				explode(rc);
-				playSynthSound('smash');
+				explode(rc, 'smash');
 				score += 300;
 				spawnFloatingText(parseInt(rc.style.left), parseInt(rc.style.top), 'SMASH! +300');
-				placeRivalCarHorizontal(rc, i, baseSpeed);
+				if (!isFinalStretch) placeRivalCarHorizontal(rc, i, baseSpeed);
+				else rc.style.left = '-999px';
 			} else if (hasShield) {
 				hasShield = false;
 				updateShieldDisplay();
-				explode(rc);
-				playSynthSound('smash');
-				placeRivalCarHorizontal(rc, i, baseSpeed);
+				explode(rc, 'smash');
+				if (!isFinalStretch) placeRivalCarHorizontal(rc, i, baseSpeed);
+				else rc.style.left = '-999px';
 			} else {
-				explode(rc);
-				placeRivalCarHorizontal(rc, i, baseSpeed);
+				explode(rc, 'crash');
+				if (!isFinalStretch) placeRivalCarHorizontal(rc, i, baseSpeed);
 				handleCrash();
 			}
 		}
@@ -1053,36 +1419,51 @@ function gameloopHorizontalProgressive(baseSpeed) {
 	// Cones
 	for (var i = 0; i < cones.length; i++) {
 		var newX = parseInt(cones[i].style.left) - (cones[i].speed * curSpeedMult * timeSlowMult);
-		if (newX < -60) placeConeHorizontal(cones[i], i, baseSpeed);
-		else cones[i].style.left = newX + 'px';
+		if (newX < -60) {
+			if (!isFinalStretch) placeConeHorizontal(cones[i], i, baseSpeed);
+			else cones[i].style.left = '-999px';
+		} else {
+			cones[i].style.left = newX + 'px';
+		}
 
 		if (hittest(cones[i], car)) {
 			if (isBoosting) {
-				explode(cones[i]);
-				playSynthSound('smash');
-				placeConeHorizontal(cones[i], i, baseSpeed);
+				explode(cones[i], 'smash');
+				if (!isFinalStretch) placeConeHorizontal(cones[i], i, baseSpeed);
+				else cones[i].style.left = '-999px';
 			} else if (hasShield) {
 				hasShield = false;
 				updateShieldDisplay();
-				explode(cones[i]);
-				placeConeHorizontal(cones[i], i, baseSpeed);
+				explode(cones[i], 'smash');
+				if (!isFinalStretch) placeConeHorizontal(cones[i], i, baseSpeed);
+				else cones[i].style.left = '-999px';
 			} else {
-				explode(cones[i]);
-				placeConeHorizontal(cones[i], i, baseSpeed);
+				explode(cones[i], 'crash');
+				if (!isFinalStretch) placeConeHorizontal(cones[i], i, baseSpeed);
 				handleCrash();
 			}
 		}
 	}
 
-	// Finish Line & Track Progress
-	var cf = 0;
-	var newX = parseInt(finish[cf].style.left) - (finish[cf].speed * curSpeedMult * timeSlowMult);
-	finish[cf].style.left = newX + 'px';
-	updateTrackProgress(Math.max(0, newX));
+	// Track Progress & Fixed Finish Line
+	var scrollDelta = baseSpeed * curSpeedMult * timeSlowMult;
+	if (stageRemainingDistance > 0) {
+		stageRemainingDistance -= scrollDelta;
+		updateTrackProgress(stageRemainingDistance);
+		if (stageRemainingDistance <= 0) {
+			stageRemainingDistance = 0;
+			isFinalStretch = true;
+			if (finish[0]) {
+				finish[0].style.opacity = '1';
+			}
+			showFinalStretchBanner();
+		}
+	}
 
-	if (hittest(finish[cf], car)) {
-		placeFinishLineHorizontal(finish[cf], 99999, baseSpeed);
-		handleStageClear();
+	if (isFinalStretch && finish[0]) {
+		if (hittest(finish[0], car) || parseInt(car.style.left) >= 860) {
+			handleStageClear();
+		}
 	}
 }
 
@@ -1100,10 +1481,14 @@ function gameloopVerticalProgressive(baseSpeed) {
 		curSpeedMult = 1.75;
 		nitro = Math.max(0, nitro - 1.8);
 		updateNitroDisplay();
+		if (!isNitroAudioActive) playSynthSound('nitro_start');
 		spawnNitroParticles(parseInt(car.style.left) + 22, parseInt(car.style.top) + 88, 'down');
-	} else if (nitro < 100) {
-		nitro = Math.min(100, nitro + rechargeRate);
-		updateNitroDisplay();
+	} else {
+		if (isNitroAudioActive) playSynthSound('nitro_stop');
+		if (nitro < 100) {
+			nitro = Math.min(100, nitro + rechargeRate);
+			updateNitroDisplay();
+		}
 	}
 
 	var timeSlowMult = isTimeSlowActive ? 0.4 : 1.0;
@@ -1112,16 +1497,16 @@ function gameloopVerticalProgressive(baseSpeed) {
 	updateScoreDisplay();
 
 	var bgSpeed = (baseSpeed * 1.5) * curSpeedMult;
-	var bgY = parseInt(bg1.style.top) + bgSpeed;
-	bg1.style.top = (bgY > GS_HEIGHT ? -1 * parseInt(bg1.style.height) : bgY) + 'px';
-	bgY = parseInt(bg2.style.top) + bgSpeed;
-	bg2.style.top = (bgY > GS_HEIGHT ? -1 * parseInt(bg2.style.height) : bgY) + 'px';
+	var bg1Y = parseInt(bg1.style.top) + bgSpeed; bg1.style.top = bg1Y + 'px';
+	var bg2Y = parseInt(bg2.style.top) + bgSpeed; bg2.style.top = bg2Y + 'px';
+	if (bg1Y >= GS_HEIGHT2) bg1.style.top = (parseInt(bg2.style.top) - GS_HEIGHT2) + 'px';
+	if (bg2Y >= GS_HEIGHT2) bg2.style.top = (parseInt(bg1.style.top) - GS_HEIGHT2) + 'px';
 
 	if (!isSpinningOut) {
 		var step = (baseSpeed * 1.5) * (isBoosting ? 1.4 : 1.0);
 		if (leftArrowDown) car.style.left = Math.max(10, parseInt(car.style.left) - step) + 'px';
 		if (rightArrowDown) car.style.left = Math.min(GS_WIDTH2 - 54, parseInt(car.style.left) + step) + 'px';
-		if (upArrowDown) car.style.top = Math.max(40, parseInt(car.style.top) - (step * 0.9)) + 'px';
+		if (upArrowDown) car.style.top = Math.max(20, parseInt(car.style.top) - (step * 0.9)) + 'px';
 		if (downArrowDown) car.style.top = Math.min(GS_HEIGHT2 - 98, parseInt(car.style.top) + (step * 0.9)) + 'px';
 	}
 
@@ -1131,22 +1516,35 @@ function gameloopVerticalProgressive(baseSpeed) {
 	for (var i = 0; i < powerups.length; i++) {
 		var pup = powerups[i];
 		var newY = parseInt(pup.style.top) + (pup.speed * curSpeedMult * timeSlowMult);
-		if (newY > GS_HEIGHT + 60) placePowerup(pup, true, i, baseSpeed);
-		else pup.style.top = newY + 'px';
+		if (newY > GS_HEIGHT + 60) {
+			if (!isFinalStretch) placePowerup(pup, true, i, baseSpeed);
+			else pup.style.top = '9999px';
+		} else {
+			pup.style.top = newY + 'px';
+		}
 
-		if (hittest(pup, car)) { handlePowerupPickup(pup); placePowerup(pup, true, i, baseSpeed); }
+		if (hittest(pup, car)) { 
+			handlePowerupPickup(pup); 
+			if (!isFinalStretch) placePowerup(pup, true, i, baseSpeed);
+			else pup.style.top = '9999px';
+		}
 	}
 
 	// Oil Slicks
 	for (var i = 0; i < oilSlicks.length; i++) {
 		var slick = oilSlicks[i];
 		var newY = parseInt(slick.style.top) + (slick.speed * curSpeedMult * timeSlowMult);
-		if (newY > GS_HEIGHT + 80) placeOilSlick(slick, true, i, baseSpeed);
-		else slick.style.top = newY + 'px';
+		if (newY > GS_HEIGHT + 80) {
+			if (!isFinalStretch) placeOilSlick(slick, true, i, baseSpeed);
+			else slick.style.top = '9999px';
+		} else {
+			slick.style.top = newY + 'px';
+		}
 
 		if (hittest(slick, car)) { 
 			if (!isBoosting && !hasShield) triggerOilSpinout(); 
-			placeOilSlick(slick, true, i, baseSpeed); 
+			if (!isFinalStretch) placeOilSlick(slick, true, i, baseSpeed);
+			else slick.style.top = '9999px';
 		}
 	}
 
@@ -1167,25 +1565,29 @@ function gameloopVerticalProgressive(baseSpeed) {
 			rc.style.left = (curX + (rc.targetX > curX ? 3 : -3)) + 'px';
 		}
 
-		if (newY > GS_HEIGHT + 100) placeRivalCarVertical(rc, i, baseSpeed);
-		else rc.style.top = newY + 'px';
+		if (newY > GS_HEIGHT + 100) {
+			if (!isFinalStretch) placeRivalCarVertical(rc, i, baseSpeed);
+			else rc.style.top = '9999px';
+		} else {
+			rc.style.top = newY + 'px';
+		}
 
 		if (hittest(rc, car)) {
 			if (isBoosting) {
-				explode(rc);
-				playSynthSound('smash');
+				explode(rc, 'smash');
 				score += 300;
 				spawnFloatingText(parseInt(rc.style.left), parseInt(rc.style.top), 'SMASH! +300');
-				placeRivalCarVertical(rc, i, baseSpeed);
+				if (!isFinalStretch) placeRivalCarVertical(rc, i, baseSpeed);
+				else rc.style.top = '9999px';
 			} else if (hasShield) {
 				hasShield = false;
 				updateShieldDisplay();
-				explode(rc);
-				playSynthSound('smash');
-				placeRivalCarVertical(rc, i, baseSpeed);
+				explode(rc, 'smash');
+				if (!isFinalStretch) placeRivalCarVertical(rc, i, baseSpeed);
+				else rc.style.top = '9999px';
 			} else {
-				explode(rc);
-				placeRivalCarVertical(rc, i, baseSpeed);
+				explode(rc, 'crash');
+				if (!isFinalStretch) placeRivalCarVertical(rc, i, baseSpeed);
 				handleCrash();
 			}
 		}
@@ -1194,36 +1596,51 @@ function gameloopVerticalProgressive(baseSpeed) {
 	// Cones
 	for (var i = 0; i < cones.length; i++) {
 		var newY = parseInt(cones[i].style.top) + (cones[i].speed * curSpeedMult * timeSlowMult);
-		if (newY > GS_HEIGHT + 60) placeConeVertical(cones[i], i, baseSpeed);
-		else cones[i].style.top = newY + 'px';
+		if (newY > GS_HEIGHT + 60) {
+			if (!isFinalStretch) placeConeVertical(cones[i], i, baseSpeed);
+			else cones[i].style.top = '9999px';
+		} else {
+			cones[i].style.top = newY + 'px';
+		}
 
 		if (hittest(cones[i], car)) {
 			if (isBoosting) {
-				explode(cones[i]);
-				playSynthSound('smash');
-				placeConeVertical(cones[i], i, baseSpeed);
+				explode(cones[i], 'smash');
+				if (!isFinalStretch) placeConeVertical(cones[i], i, baseSpeed);
+				else cones[i].style.top = '9999px';
 			} else if (hasShield) {
 				hasShield = false;
 				updateShieldDisplay();
-				explode(cones[i]);
-				placeConeVertical(cones[i], i, baseSpeed);
+				explode(cones[i], 'smash');
+				if (!isFinalStretch) placeConeVertical(cones[i], i, baseSpeed);
+				else cones[i].style.top = '9999px';
 			} else {
-				explode(cones[i]);
-				placeConeVertical(cones[i], i, baseSpeed);
+				explode(cones[i], 'crash');
+				if (!isFinalStretch) placeConeVertical(cones[i], i, baseSpeed);
 				handleCrash();
 			}
 		}
 	}
 
-	// Finish Line & Track Progress
-	var cf = 1;
-	var newY = parseInt(finish[cf].style.top) + (finish[cf].speed * curSpeedMult * timeSlowMult);
-	finish[cf].style.top = newY + 'px';
-	updateTrackProgress(Math.max(0, -newY));
+	// Track Progress & Fixed Finish Line at Top of Screen
+	var scrollDelta = (baseSpeed * 1.5) * curSpeedMult * timeSlowMult;
+	if (stageRemainingDistance > 0) {
+		stageRemainingDistance -= scrollDelta;
+		updateTrackProgress(stageRemainingDistance);
+		if (stageRemainingDistance <= 0) {
+			stageRemainingDistance = 0;
+			isFinalStretch = true;
+			if (finish[1]) {
+				finish[1].style.opacity = '1';
+			}
+			showFinalStretchBanner();
+		}
+	}
 
-	if (hittest(finish[cf], car)) {
-		placeFinishLineVertical(finish[cf], -99999, baseSpeed);
-		handleStageClear();
+	if (isFinalStretch && finish[1]) {
+		if (hittest(finish[1], car) || parseInt(car.style.top) <= 85) {
+			handleStageClear();
+		}
 	}
 }
 
