@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Rockin Racer - 99-Level Campaign & Garage</title>
+	<title>Rockin Racer - 99-Level Arcade Grand Prix</title>
 	<link rel="stylesheet" type="text/css" href="styles.css">
 	<script language="javascript" type="text/javascript" src="engine.js"></script>
 </head>
@@ -29,16 +29,31 @@
 					<div id="nitroBar"></div>
 				</div>
 			</div>
+			<div class="hud-item hud-progress-item">
+				<span class="hud-label">TRACK</span>
+				<div id="trackProgressContainer">
+					<div id="trackProgressBar"></div>
+					<span id="trackCarIcon">🏎️</span>
+					<span id="trackFinishIcon">🏁</span>
+				</div>
+			</div>
 			<div class="hud-item">
 				<div id="shieldBadge">🛡️ SHIELD</div>
 			</div>
-			<div class="hud-item">
-				<button id="btnMute" class="btn-mute" onclick="toggleMute()">🔊</button>
+			<div class="hud-item hud-actions">
+				<button id="btnPause" class="btn-hud" onclick="togglePause()" title="Pause Game (P or ESC)">⏸️</button>
+				<button id="btnMute" class="btn-hud" onclick="toggleMute()" title="Toggle Audio (M)">🔊</button>
 			</div>
 		</div>
 
 		<!-- Bullet-Time Vignette Overlay -->
 		<div id="bulletTimeOverlay"></div>
+
+		<!-- Stage Banner -->
+		<div id="stageBanner" class="stage-banner">
+			<div id="stageBannerText" class="stage-banner-text">STAGE 1: GO!</div>
+			<div id="stageBannerSub" class="stage-banner-sub">REACH THE CHECKERED FINISH LINE!</div>
+		</div>
 
 		<!-- Particle Canvas Overlay -->
 		<canvas id="particleCanvas" width="1050" height="600"></canvas>
@@ -46,6 +61,7 @@
 		<!-- Title & Intro Screen -->
 		<div id="introScreen">
 			<div id="titleHeader">ROCKIN RACER</div>
+			<div id="titleSub">99-STAGE CYBER ARCADE GRAND PRIX</div>
 			
 			<!-- Car Selection Garage UI -->
 			<div id="garageContainer">
@@ -54,29 +70,119 @@
 					<div id="carCardRed" class="car-card selected" onclick="chooseCar('red')">
 						<div class="car-preview-box" id="previewRed"></div>
 						<div class="car-card-name">RED FIRESTAR</div>
-						<div class="car-card-perk">BALANCED</div>
+						<div class="car-card-perk">BALANCED ACCEL</div>
 					</div>
 					<div id="carCardBlue" class="car-card" onclick="chooseCar('blue')">
 						<div class="car-preview-box" id="previewBlue"></div>
 						<div class="car-card-name">NEON SPECTER</div>
-						<div class="car-card-perk">+20% NITRO RECHARGE</div>
+						<div class="car-card-perk">+50% NITRO RECHARGE</div>
 					</div>
 					<div id="carCardGold" class="car-card" onclick="chooseCar('gold')">
 						<div class="car-preview-box" id="previewGold"></div>
 						<div class="car-card-name">GOLD PHANTOM</div>
-						<div class="car-card-perk">+25% SCORE BONUS</div>
+						<div class="car-card-perk">+25% SCORE MULTIPLIER</div>
 					</div>
 					<div id="carCardCyber" class="car-card" onclick="chooseCar('cyber')">
 						<div class="car-preview-box" id="previewCyber"></div>
 						<div class="car-card-name">CYBER LIGHTNING</div>
-						<div class="car-card-perk">+1 SHIELD CHARGE</div>
+						<div class="car-card-perk">FREE SHIELD EVERY STAGE</div>
 					</div>
 				</div>
 			</div>
 
-			<div id="btnWatchIntro" class="button" onclick="playIntroVideo()">WATCH INTRO</div>
+			<div class="title-action-buttons">
+				<button id="btnHowToPlay" class="button button-info" onclick="openInstructions()">📖 HOW TO PLAY & CONTROLS</button>
+				<button id="firstButton" class="button button-primary" onclick="startCampaign()">🏁 START RACE!</button>
+				<button id="btnWatchIntro" class="button button-secondary-menu" onclick="playIntroVideo()">🎬 WATCH INTRO</button>
+			</div>
 			<div id="btnSkipIntro" class="button-secondary" onclick="showBeginButton()" style="display:none;">SKIP INTRO</div>
-			<div id="firstButton" class="button" onclick="startCampaign()" style="display:none;">BEGIN CAMPAIGN!</div>
+		</div>
+
+		<!-- How to Play / Instructions Modal -->
+		<div id="instructionsModal" class="arcade-modal modal-large">
+			<div class="modal-header">
+				<div class="modal-title info">📖 HOW TO PLAY & WIN</div>
+				<button class="modal-close" onclick="closeInstructions()">✕</button>
+			</div>
+			
+			<div class="instructions-scroll">
+				<div class="instruction-card highlight-goal">
+					<div class="card-title">🏁 THE OBJECTIVE: HOW TO WIN</div>
+					<p>Steer your high-performance racer through <strong>99 challenging arcade stages</strong>!</p>
+					<ul>
+						<li><strong>Stage Victory:</strong> Survive and reach the <strong>Checkered Finish Line (🏁)</strong> at the end of the stage distance without crashing.</li>
+						<li><strong>Campaign Victory:</strong> Clear all 99 levels to be crowned the <strong>Grand Champion</strong> and secure your legendary High Score!</li>
+						<li><strong>Track Progress:</strong> Watch the <strong>TRACK</strong> bar on the top HUD to monitor your distance to the finish line.</li>
+					</ul>
+				</div>
+
+				<div class="instruction-card">
+					<div class="card-title">🎮 CONTROLS & COMMANDS</div>
+					<div class="controls-grid">
+						<div class="ctrl-row">
+							<div class="keys-box">
+								<span class="keycap">W</span><span class="keycap">A</span><span class="keycap">S</span><span class="keycap">D</span>
+								<span class="or-divider">or</span>
+								<span class="keycap">↑</span><span class="keycap">←</span><span class="keycap">↓</span><span class="keycap">→</span>
+							</div>
+							<div class="ctrl-desc"><strong>Steer & Accelerate / Brake</strong>: Full 4-way dynamic vehicle movement in all stages.</div>
+						</div>
+						<div class="ctrl-row">
+							<div class="keys-box">
+								<span class="keycap key-space">SPACEBAR</span>
+							</div>
+							<div class="ctrl-desc"><strong>Nitro Boost</strong>: Blasts forward at maximum velocity! Invulnerable to cones and oil slicks while boosting.</div>
+						</div>
+						<div class="ctrl-row">
+							<div class="keys-box">
+								<span class="keycap">P</span> <span class="or-divider">or</span> <span class="keycap">ESC</span>
+							</div>
+							<div class="ctrl-desc"><strong>Pause / Resume</strong>: Pauses the action and brings up the race menu.</div>
+						</div>
+						<div class="ctrl-row">
+							<div class="keys-box">
+								<span class="keycap">M</span>
+							</div>
+							<div class="ctrl-desc"><strong>Toggle Audio</strong>: Mutes or unmutes synthesized engine audio and SFX.</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="instruction-card">
+					<div class="card-title">⚡ POWER-UPS (COLLECT THESE!)</div>
+					<div class="items-grid">
+						<div class="item-cell"><span class="item-icon">⚡</span> <strong>Nitro Refill</strong>: Restores 100% Nitro meter instantly.</div>
+						<div class="item-cell"><span class="item-icon">🛡️</span> <strong>Energy Shield</strong>: Absorbs 1 fatal obstacle or vehicle collision.</div>
+						<div class="item-cell"><span class="item-icon">⭐</span> <strong>Bonus Star</strong>: +500 score points (+25% with Gold Phantom).</div>
+						<div class="item-cell"><span class="item-icon">⏱️</span> <strong>Bullet Time</strong>: Slows down hazards for 4 seconds for precision weaving.</div>
+					</div>
+				</div>
+
+				<div class="instruction-card danger-card">
+					<div class="card-title">⚠️ HAZARDS & TRAFFIC (AVOID AT ALL COSTS!)</div>
+					<div class="items-grid">
+						<div class="item-cell"><span class="item-icon">🚧</span> <strong>Traffic Cones</strong>: Fatal collision unless protected by Shield or Nitro boost.</div>
+						<div class="item-cell"><span class="item-icon">🛢️</span> <strong>Oil Slicks</strong>: Causes an uncontrollable 360° spinout and speed drop.</div>
+						<div class="item-cell"><span class="item-icon">🏎️</span> <strong>Rival Traffic</strong>: Fast civilian and rival AI cars changing lanes!</div>
+					</div>
+				</div>
+			</div>
+
+			<button class="modal-btn" onclick="closeInstructions()">GOT IT - LET'S RACE!</button>
+		</div>
+
+		<!-- Pause Modal -->
+		<div id="pauseModal" class="arcade-modal">
+			<div class="modal-title">⏸️ RACE PAUSED</div>
+			<div id="pauseStats" class="modal-stats">
+				STAGE: LEVEL 1/99<br>
+				CURRENT SCORE: 0
+			</div>
+			<div class="pause-actions">
+				<button class="modal-btn" onclick="togglePause()">RESUME RACE</button>
+				<button class="modal-btn modal-btn-secondary" onclick="restartCurrentLevel()">RESTART STAGE</button>
+				<button class="modal-btn modal-btn-secondary" onclick="returnToTitle()">EXIT TO MENU</button>
+			</div>
 		</div>
 
 		<!-- Game Screens -->
@@ -85,30 +191,24 @@
 
 		<!-- Game Over Modal -->
 		<div id="deathModal" class="arcade-modal">
-			<div class="modal-title">CRASHED!</div>
+			<div class="modal-title">💥 CRASHED!</div>
 			<div id="deathStats" class="modal-stats">
 				STAGE: LEVEL 1/99<br>
 				SCORE: 0<br>
 				BEST: 0
 			</div>
 			<button id="btnDeathRestart" class="modal-btn" onclick="restartCurrentLevel()">RETRY STAGE</button>
+			<button class="modal-btn modal-btn-secondary" onclick="returnToTitle()">GARAGE MENU</button>
 		</div>
 
 		<!-- Level Complete Modal -->
 		<div id="winModal" class="arcade-modal">
-			<div class="modal-title win">STAGE CLEAR!</div>
+			<div class="modal-title win">🏆 STAGE CLEAR!</div>
 			<div id="winStats" class="modal-stats">
 				STAGE SCORE: 0
 			</div>
-			<button id="btnWinContinue" class="modal-btn" onclick="nextLevel()">NEXT LEVEL</button>
+			<button id="btnWinContinue" class="modal-btn" onclick="nextLevel()">NEXT STAGE ➔</button>
 		</div>
-
-		<!-- Legacy Fallbacks -->
-		<div id="btnDeath" onclick="restartCurrentLevel()" style="display:none;">Restart!</div>
-		<div id="btnDeath2" onclick="restartCurrentLevel()" style="display:none;">Restart!</div>
-		<div id="btnDeath3" onclick="restartCurrentLevel()" style="display:none;">Restart!</div>
-		<div id="btnContinue" onclick="nextLevel()" style="display:none;">Next!</div>
-		<div id="btnContinue2" onclick="nextLevel()" style="display:none;">Next!</div>
 
 		<!-- Video & Audio Assets -->
 		<video id="Intro" onended="introFinished()" width="1050" height="600" playsinline style="display:none;">
