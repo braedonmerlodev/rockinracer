@@ -1,289 +1,488 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@600;800;900&display=swap');
 
-		 #Intro{
-	 		position: absolute;
-		 }
-		#introScreen{
-			position: absolute;
-			z-index: 2;
-			text-align: center;
-			width: 800px;
-			height: 400px;
-			background-image: url("images/streetside.jpg");
-			background-repeat: no-repeat;
-			background-size: 0;
-			font-size: 24px;
-			font-weight: 800;
-			color: green;
-			margin-left: auto;
-			margin-right: auto;
-		} 
-		#gameScreen{
+* {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
 
-			position: absolute;
-			background-color: black;
-			overflow: hidden;
-			margin-left: auto;
-			margin-right: auto;
-		}
+body {
+	background: #090a10;
+	color: #ffffff;
+	font-family: 'Outfit', sans-serif;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	min-height: 100vh;
+	overflow: hidden;
+	user-select: none;
+}
 
-		#gameScreen2{
+#gameContainer {
+	position: relative;
+	width: 1050px;
+	height: 600px;
+	box-shadow: 0 0 40px rgba(255, 0, 85, 0.35), 0 0 80px rgba(0, 229, 255, 0.25);
+	border-radius: 14px;
+	overflow: hidden;
+	background: #000;
+	border: 3px solid #ff0055;
+}
 
-			position: absolute;
-			background-color: black;
-			overflow: hidden;
-			margin-left: 300px;
-			
-		}
+#Intro {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 1050px;
+	height: 600px;
+	z-index: 1;
+	object-fit: cover;
+}
 
+#introScreen {
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index: 10;
+	text-align: center;
+	width: 1050px;
+	height: 600px;
+	background-image: url("streetside.jpg");
+	background-repeat: no-repeat;
+	background-size: cover;
+	pointer-events: none;
+}
 
+#titleHeader {
+	position: absolute;
+	top: 16%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	font-family: 'Press Start 2P', cursive;
+	font-size: 38px;
+	color: #ffff00;
+	text-shadow: 4px 4px 0px #ff0055, 8px 8px 25px rgba(0, 0, 0, 0.9);
+	letter-spacing: 2px;
+	pointer-events: none;
+	z-index: 20;
+	animation: titlePulse 2s infinite ease-in-out;
+}
 
-		#gameWindow{
-			
-			background-color: black;
-			margin: auto;
-		}
+@keyframes titlePulse {
+	0%, 100% { transform: translate(-50%, -50%) scale(1); }
+	50% { transform: translate(-50%, -50%) scale(1.03); }
+}
 
-		#videoWindow{
-			position: relative;
-			width: 1280px;
-			height: 720px;
-			background-color: black;
-			margin: auto;
-		}
+/* Car Selection Garage UI */
+#garageContainer {
+	position: absolute;
+	top: 48%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	z-index: 20;
+	pointer-events: auto;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 12px;
+}
 
-		video{
-			position: absolute;
-		}
+.garage-label {
+	font-family: 'Press Start 2P', monospace;
+	font-size: 13px;
+	color: #00e5ff;
+	text-shadow: 0 0 10px rgba(0, 229, 255, 0.8);
+}
 
+.car-grid {
+	display: flex;
+	gap: 14px;
+}
 
-		.gameObject{
-						position: absolute;
-						z-index: 1;
-						background-color: transparent;
-					}
+.car-card {
+	background: rgba(15, 16, 26, 0.92);
+	border: 2px solid rgba(255, 255, 255, 0.2);
+	border-radius: 12px;
+	padding: 12px 14px;
+	width: 175px;
+	text-align: center;
+	cursor: pointer;
+	box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+	transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
 
-	#btnDeath{
-		position: absolute;
-		left: 530px;
-		top: 100px;
+.car-card:hover {
+	transform: translateY(-4px) scale(1.04);
+	border-color: #00e5ff;
+	box-shadow: 0 0 20px rgba(0, 229, 255, 0.6);
+}
 
-		display: none;
+.car-card.selected {
+	border: 3px solid #ffea00;
+	box-shadow: 0 0 25px rgba(255, 234, 0, 0.9);
+	background: rgba(30, 32, 50, 0.95);
+}
 
-		background-color: rgba(255, 255, 255, 0.6);
-		color: black;
+.car-card-name {
+	font-family: 'Outfit', sans-serif;
+	font-size: 14px;
+	font-weight: 800;
+	color: #fff;
+	margin-top: 6px;
+}
 
-		padding: 20px;
-		padding-top: 10px;
-		padding-bottom: 10px;
-		border-radius: 10px;
+.car-card-perk {
+	font-family: 'Press Start 2P', monospace;
+	font-size: 9px;
+	color: #ff0055;
+	margin-top: 4px;
+}
 
-		text-align: center;
-		font-size: 14pt; 
+.car-preview-box {
+	width: 100%;
+	height: 55px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
 
-		cursor: hand;
-		cursor: pointer;
+#gameScreen {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 1050px;
+	height: 600px;
+	background-color: #111;
+	overflow: hidden;
+}
 
-		z-index: 10;
-		-webkit-touch-callout: none;
-		-webkit-user-select: none;
-		-khtml-user-select: none;
-		-moz-user-select: none;
-		-ms-user-select: none;
-		user-select: none;
+#gameScreen2 {
+	position: absolute;
+	top: 0;
+	left: 300px;
+	width: 450px;
+	height: 600px;
+	background-color: #111;
+	overflow: hidden;
+}
 
-	}
+/* Stacking Hierarchy */
+.bgObject {
+	position: absolute;
+	z-index: 1;
+	pointer-events: none;
+}
 
-	#btnDeath2{
-		position: absolute;
-		left: 530px;
-		top: 100px;
+.finishObject {
+	position: absolute;
+	z-index: 3;
+	pointer-events: none;
+}
 
-		display: none;
+.oil-slick {
+	position: absolute;
+	z-index: 4;
+	width: 58px;
+	height: 38px;
+	background: radial-gradient(ellipse, #111 35%, #00e5ff 65%, #ff0055 90%);
+	border-radius: 50%;
+	opacity: 0.85;
+	box-shadow: 0 0 12px rgba(0, 229, 255, 0.6);
+}
 
-		background-color: rgba(255, 255, 255, 0.6);
-		color: black;
+.coneObject {
+	position: absolute;
+	z-index: 8;
+	background: transparent;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
 
-		padding: 20px;
-		padding-top: 10px;
-		padding-bottom: 10px;
-		border-radius: 10px;
+.powerup {
+	position: absolute;
+	z-index: 9;
+	width: 42px;
+	height: 42px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 20px;
+	box-shadow: 0 0 15px currentColor;
+	animation: itemFloat 1.2s infinite ease-in-out alternate;
+}
 
-		text-align: center;
-		font-size: 14pt; 
+.playerCar {
+	position: absolute;
+	z-index: 15;
+	background: transparent;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.7));
+}
 
-		cursor: hand;
-		cursor: pointer;
+.shield-aura {
+	position: absolute;
+	z-index: 16;
+	border-radius: 50%;
+	border: 3px solid #00e5ff;
+	box-shadow: 0 0 20px #00e5ff, inset 0 0 15px #00e5ff;
+	pointer-events: none;
+	animation: auraRotate 2s linear infinite;
+}
 
-		z-index: 10;
-		-webkit-touch-callout: none;
-		-webkit-user-select: none;
-		-khtml-user-select: none;
-		-moz-user-select: none;
-		-ms-user-select: none;
-		user-select: none;
+@keyframes auraRotate {
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
+}
 
-	}
+.vector-car, .vector-cone {
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+	display: block;
+}
 
-	#btnDeath3{
-		position: absolute;
-		left: 530px;
-		top: 100px;
+/* Bullet-Time Overlay */
+#bulletTimeOverlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 1050px;
+	height: 600px;
+	z-index: 28;
+	pointer-events: none;
+	display: none;
+	box-shadow: inset 0 0 100px rgba(0, 229, 255, 0.6);
+	animation: bulletPulse 1s infinite alternate;
+}
 
-		display: none;
+@keyframes bulletPulse {
+	from { box-shadow: inset 0 0 60px rgba(0, 229, 255, 0.4); }
+	to { box-shadow: inset 0 0 120px rgba(0, 229, 255, 0.8); }
+}
 
-		background-color: rgba(255, 255, 255, 0.6);
-		color: black;
+/* Particle Canvas Overlay */
+#particleCanvas {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 1050px;
+	height: 600px;
+	z-index: 30;
+	pointer-events: none;
+}
 
-		padding: 20px;
-		padding-top: 10px;
-		padding-bottom: 10px;
-		border-radius: 10px;
+/* Neon Arcade HUD */
+#hudBar {
+	position: absolute;
+	top: 15px;
+	left: 20px;
+	right: 20px;
+	height: 48px;
+	z-index: 50;
+	display: none;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0 20px;
+	background: rgba(15, 16, 26, 0.88);
+	backdrop-filter: blur(10px);
+	border: 2px solid rgba(255, 255, 255, 0.18);
+	border-radius: 10px;
+	font-family: 'Press Start 2P', monospace;
+	font-size: 12px;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
 
-		text-align: center;
-		font-size: 14pt; 
+.hud-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
 
-		cursor: hand;
-		cursor: pointer;
+.hud-label {
+	color: #00e5ff;
+	text-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+}
 
-		z-index: 10;
-		-webkit-touch-callout: none;
-		-webkit-user-select: none;
-		-khtml-user-select: none;
-		-moz-user-select: none;
-		-ms-user-select: none;
-		user-select: none;
+.hud-value {
+	color: #fff;
+}
 
-	}
+/* Nitro Bar */
+#nitroContainer {
+	width: 110px;
+	height: 14px;
+	background: rgba(0, 0, 0, 0.8);
+	border: 2px solid #ffea00;
+	border-radius: 7px;
+	overflow: hidden;
+}
 
-	.button{
-		background-color: red;
-		color: yellow;	
-		padding: 10px;
-		margin-top: 450px;
-		margin-left: 625px;
-		border-radius: 8px;
-		cursor: hand;
-		cursor: pointer;
-		width: 90px;
-		text-align: center;
-		user-select: none;
-		-o-user-select:none;
-		-moz-user-select: none;
-		-khtml-user-select: none;
-		-webkit-user-select: none;
-		}
-	.button:hover{
-		background-color: black;
-		color: red;
-		}
-	
-	#btnContinue{
-		position: absolute;
-		left: 530px;
-		top: 100px;
+#nitroBar {
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(90deg, #ffea00, #ff0055);
+	box-shadow: 0 0 10px #ffea00;
+	transition: width 0.1s linear;
+}
 
-		display: none;
+/* Shield Badge */
+#shieldBadge {
+	padding: 3px 8px;
+	background: rgba(0, 229, 255, 0.2);
+	border: 1px solid #00e5ff;
+	border-radius: 4px;
+	color: #00e5ff;
+	font-size: 10px;
+	display: none;
+	animation: shieldGlow 1.5s infinite alternate;
+}
 
-		background-color: rgba(255, 255, 255, 0.6);
-		color: black;
+@keyframes shieldGlow {
+	from { box-shadow: 0 0 5px #00e5ff; }
+	to { box-shadow: 0 0 15px #00e5ff; }
+}
 
-		padding: 20px;
-		padding-top: 10px;
-		padding-bottom: 10px;
-		border-radius: 10px;
+/* Buttons */
+.button {
+	position: absolute;
+	left: 50%;
+	top: 84%;
+	transform: translate(-50%, -50%);
+	z-index: 20;
+	pointer-events: auto;
+	background-color: #ff0055;
+	color: #ffff00;
+	padding: 14px 36px;
+	font-family: 'Press Start 2P', monospace;
+	font-size: 15px;
+	border: 3px solid #ffff00;
+	border-radius: 10px;
+	cursor: pointer;
+	text-align: center;
+	box-shadow: 0 0 20px rgba(255, 0, 85, 0.8);
+	transition: transform 0.15s ease, background-color 0.15s ease;
+}
 
-		text-align: center;
-		font-size: 14pt; 
+.button:hover {
+	background-color: #000;
+	color: #ff0055;
+	transform: translate(-50%, -50%) scale(1.08);
+}
 
-		cursor: hand;
-		cursor: pointer;
+.button-secondary {
+	position: absolute;
+	right: 25px;
+	bottom: 25px;
+	z-index: 25;
+	pointer-events: auto;
+	background: rgba(0, 0, 0, 0.8);
+	color: #ffffff;
+	padding: 10px 18px;
+	font-family: 'Outfit', sans-serif;
+	font-size: 14px;
+	font-weight: 800;
+	border: 2px solid rgba(255, 255, 255, 0.4);
+	border-radius: 8px;
+	cursor: pointer;
+	transition: background 0.2s;
+}
 
-		z-index: 10;
-		-webkit-touch-callout: none;
-		-webkit-user-select: none;
-		-khtml-user-select: none;
-		-moz-user-select: none;
-		-ms-user-select: none;
-		user-select: none;
+.button-secondary:hover {
+	background: #ffffff;
+	color: #000000;
+}
 
-	}
+.btn-mute {
+	background: transparent;
+	border: 1px solid rgba(255, 255, 255, 0.3);
+	color: #fff;
+	font-size: 16px;
+	padding: 4px 8px;
+	border-radius: 6px;
+	cursor: pointer;
+}
 
-	#btnContinue{
-		position: absolute;
-		left: 530px;
-		top: 100px;
+/* Modals */
+.arcade-modal {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	z-index: 100;
+	display: none;
+	flex-direction: column;
+	align-items: center;
+	gap: 15px;
+	padding: 30px 40px;
+	background: rgba(10, 12, 22, 0.95);
+	backdrop-filter: blur(12px);
+	border: 3px solid #ff0055;
+	border-radius: 16px;
+	box-shadow: 0 0 50px rgba(255, 0, 85, 0.5);
+	text-align: center;
+	min-width: 340px;
+}
 
-		display: none;
+.modal-title {
+	font-family: 'Press Start 2P', cursive;
+	font-size: 24px;
+	color: #ff0055;
+}
 
-		background-color: rgba(255, 255, 255, 0.6);
-		color: black;
+.modal-title.win {
+	color: #00e5ff;
+}
 
-		padding: 20px;
-		padding-top: 10px;
-		padding-bottom: 10px;
-		border-radius: 10px;
+.modal-stats {
+	font-family: 'Press Start 2P', monospace;
+	font-size: 12px;
+	color: #fff;
+	line-height: 1.8;
+}
 
-		text-align: center;
-		font-size: 14pt; 
+.modal-btn {
+	margin-top: 10px;
+	padding: 12px 24px;
+	background: #ffea00;
+	color: #000;
+	font-family: 'Press Start 2P', monospace;
+	font-size: 12px;
+	font-weight: bold;
+	border: none;
+	border-radius: 8px;
+	cursor: pointer;
+}
 
-		cursor: hand;
-		cursor: pointer;
+/* Power-ups */
+@keyframes itemFloat {
+	from { transform: translateY(0px) scale(1); }
+	to { transform: translateY(-6px) scale(1.08); }
+}
 
-		z-index: 10;
-		-webkit-touch-callout: none;
-		-webkit-user-select: none;
-		-khtml-user-select: none;
-		-moz-user-select: none;
-		-ms-user-select: none;
-		user-select: none;
+.powerup-nitro {
+	background: radial-gradient(circle, #ffea00, #ff0055);
+	border: 2px solid #ffea00;
+	color: #ffea00;
+}
 
-	}
+.powerup-shield {
+	background: radial-gradient(circle, #00e5ff, #0055ff);
+	border: 2px solid #00e5ff;
+	color: #00e5ff;
+}
 
+.powerup-star {
+	background: radial-gradient(circle, #ffff00, #ffaa00);
+	border: 2px solid #ffff00;
+	color: #ffff00;
+}
 
-
-	#btnContinue2{
-		position: absolute;
-		left: 530px;
-		top: 100px;
-
-		display: none;
-
-		background-color: rgba(255, 255, 255, 0.6);
-		color: black;
-
-		padding: 20px;
-		padding-top: 10px;
-		padding-bottom: 10px;
-		border-radius: 10px;
-
-		text-align: center;
-		font-size: 14pt; 
-
-		cursor: hand;
-		cursor: pointer;
-
-		z-index: 10;
-		-webkit-touch-callout: none;
-		-webkit-user-select: none;
-		-khtml-user-select: none;
-		-moz-user-select: none;
-		-ms-user-select: none;
-		user-select: none;
-
-	}
-	#btnContinue:hover{
-		background-color: rgba(255, 255, 255, 0.9);
-	}
-	#btnContinue2:hover{
-		background-color: rgba(255, 255, 255, 0.9);
-	}
-	#btnDeath:hover{
-		background-color: rgba(255, 255, 255, 0.9);
-	}
-	#btnDeath2:hover{
-		background-color: rgba(255, 255, 255, 0.9);
-	}
-	#btnDeath3:hover{
-		background-color: rgba(255, 255, 255, 0.9);
-	}
-	
+.powerup-time {
+	background: radial-gradient(circle, #00e5ff, #aa00ff);
+	border: 2px solid #00e5ff;
+	color: #ffffff;
+}

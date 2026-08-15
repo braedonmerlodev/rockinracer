@@ -1,36 +1,130 @@
-<html>
-	<head>
-	<title>Rockin Racer</title>
-		 <link rel="stylesheet" type="text/css" href="styles.css">
-		<script language="javascript" type="text/javascript" src="engine.js"></script>
-		<script language="javascript" type="text/javascript" src="myGameLibrary.js"></script>
-	</head>
-	<body onload="introVideo()">
-		<div id="introScreen">
-			<div id="firstButton" class="button" onclick="level1()">BEGIN!</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Rockin Racer - 99-Level Campaign & Garage</title>
+	<link rel="stylesheet" type="text/css" href="styles.css">
+	<script language="javascript" type="text/javascript" src="engine.js"></script>
+</head>
+<body onload="setupIntro()">
+	<div id="gameContainer">
+		<!-- Neon HUD Header -->
+		<div id="hudBar">
+			<div class="hud-item">
+				<span class="hud-label">STAGE</span>
+				<span id="levelVal" class="hud-value">LEVEL 1/99</span>
+			</div>
+			<div class="hud-item">
+				<span class="hud-label">SCORE</span>
+				<span id="scoreVal" class="hud-value">00000</span>
+			</div>
+			<div class="hud-item">
+				<span class="hud-label">BEST</span>
+				<span id="highScoreVal" class="hud-value">00000</span>
+			</div>
+			<div class="hud-item">
+				<span class="hud-label">NITRO</span>
+				<div id="nitroContainer">
+					<div id="nitroBar"></div>
+				</div>
+			</div>
+			<div class="hud-item">
+				<div id="shieldBadge">🛡️ SHIELD</div>
+			</div>
+			<div class="hud-item">
+				<button id="btnMute" class="btn-mute" onclick="toggleMute()">🔊</button>
+			</div>
 		</div>
+
+		<!-- Bullet-Time Vignette Overlay -->
+		<div id="bulletTimeOverlay"></div>
+
+		<!-- Particle Canvas Overlay -->
+		<canvas id="particleCanvas" width="1050" height="600"></canvas>
+
+		<!-- Title & Intro Screen -->
+		<div id="introScreen">
+			<div id="titleHeader">ROCKIN RACER</div>
+			
+			<!-- Car Selection Garage UI -->
+			<div id="garageContainer">
+				<div class="garage-label">CHOOSE YOUR RACECAR</div>
+				<div class="car-grid">
+					<div id="carCardRed" class="car-card selected" onclick="chooseCar('red')">
+						<div class="car-preview-box" id="previewRed"></div>
+						<div class="car-card-name">RED FIRESTAR</div>
+						<div class="car-card-perk">BALANCED</div>
+					</div>
+					<div id="carCardBlue" class="car-card" onclick="chooseCar('blue')">
+						<div class="car-preview-box" id="previewBlue"></div>
+						<div class="car-card-name">NEON SPECTER</div>
+						<div class="car-card-perk">+20% NITRO RECHARGE</div>
+					</div>
+					<div id="carCardGold" class="car-card" onclick="chooseCar('gold')">
+						<div class="car-preview-box" id="previewGold"></div>
+						<div class="car-card-name">GOLD PHANTOM</div>
+						<div class="car-card-perk">+25% SCORE BONUS</div>
+					</div>
+					<div id="carCardCyber" class="car-card" onclick="chooseCar('cyber')">
+						<div class="car-preview-box" id="previewCyber"></div>
+						<div class="car-card-name">CYBER LIGHTNING</div>
+						<div class="car-card-perk">+1 SHIELD CHARGE</div>
+					</div>
+				</div>
+			</div>
+
+			<div id="btnWatchIntro" class="button" onclick="playIntroVideo()">WATCH INTRO</div>
+			<div id="btnSkipIntro" class="button-secondary" onclick="showBeginButton()" style="display:none;">SKIP INTRO</div>
+			<div id="firstButton" class="button" onclick="startCampaign()" style="display:none;">BEGIN CAMPAIGN!</div>
+		</div>
+
+		<!-- Game Screens -->
 		<div id="gameScreen"></div>
 		<div id="gameScreen2"></div>
-		<div id="btnDeath" onclick="level1()">Restart!</div>
-		<div id="btnDeath2" onclick="level2()">Restart!</div>
-		<div id="btnDeath3" onclick="level3()">Restart!</div>
-		<div id="btnContinue" onclick="level2()">Level 2!</div>
-		<div id="btnContinue2" onclick="level3()">Level 3!</div>
-		
-		<video id="Intro" onended="startButton()" width="1280" height="720" autoplay>
-				<source src="rockingintro.mp4" type="video/mp4">
-					your browser does not support the video tag.
+
+		<!-- Game Over Modal -->
+		<div id="deathModal" class="arcade-modal">
+			<div class="modal-title">CRASHED!</div>
+			<div id="deathStats" class="modal-stats">
+				STAGE: LEVEL 1/99<br>
+				SCORE: 0<br>
+				BEST: 0
+			</div>
+			<button id="btnDeathRestart" class="modal-btn" onclick="restartCurrentLevel()">RETRY STAGE</button>
+		</div>
+
+		<!-- Level Complete Modal -->
+		<div id="winModal" class="arcade-modal">
+			<div class="modal-title win">STAGE CLEAR!</div>
+			<div id="winStats" class="modal-stats">
+				STAGE SCORE: 0
+			</div>
+			<button id="btnWinContinue" class="modal-btn" onclick="nextLevel()">NEXT LEVEL</button>
+		</div>
+
+		<!-- Legacy Fallbacks -->
+		<div id="btnDeath" onclick="restartCurrentLevel()" style="display:none;">Restart!</div>
+		<div id="btnDeath2" onclick="restartCurrentLevel()" style="display:none;">Restart!</div>
+		<div id="btnDeath3" onclick="restartCurrentLevel()" style="display:none;">Restart!</div>
+		<div id="btnContinue" onclick="nextLevel()" style="display:none;">Next!</div>
+		<div id="btnContinue2" onclick="nextLevel()" style="display:none;">Next!</div>
+
+		<!-- Video & Audio Assets -->
+		<video id="Intro" onended="introFinished()" width="1050" height="600" playsinline style="display:none;">
+			<source src="rockingintro.mp4" type="video/mp4">
+			your browser does not support the video tag.
 		</video>
+
 		<audio id="sndIntro" preload="auto">
 			<source src="sound/intro.mp3">
 		</audio>
 		<audio id="sndBackground" preload="auto">
 			<source src="sound/background.wav">
 		</audio>
-
 		<audio id="sndDriving" preload="auto">
 			<source src="sound/driving.mp3">
 		</audio>
-
-	</body>
+	</div>
+</body>
 </html>
