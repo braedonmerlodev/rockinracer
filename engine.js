@@ -398,6 +398,29 @@ function playSynthSound(type) {
 			gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
 			osc.connect(gain); gain.connect(ctx.destination);
 			osc.start(now); osc.stop(now + 0.22);
+
+		} else if (type === 'victory_chime') {
+			// Rapid triumphant arpeggio chime (C5, E5, G5, B5, C6)
+			var chimeNotes = [
+				{ f: 523.25, t: 0.00, d: 0.18 },
+				{ f: 659.25, t: 0.07, d: 0.18 },
+				{ f: 783.99, t: 0.14, d: 0.18 },
+				{ f: 987.77, t: 0.21, d: 0.22 },
+				{ f: 1046.50, t: 0.28, d: 0.55 }
+			];
+			chimeNotes.forEach(n => {
+				var osc = ctx.createOscillator();
+				var g = ctx.createGain();
+				osc.type = 'triangle';
+				osc.frequency.setValueAtTime(n.f, now + n.t);
+				g.gain.setValueAtTime(0.01, now + n.t);
+				g.gain.linearRampToValueAtTime(0.35, now + n.t + 0.03);
+				g.gain.exponentialRampToValueAtTime(0.01, now + n.t + n.d);
+				osc.connect(g);
+				g.connect(ctx.destination);
+				osc.start(now + n.t);
+				osc.stop(now + n.t + n.d);
+			});
 		}
 	} catch (e) { console.log('Synth sound catch:', e); }
 }
@@ -491,64 +514,483 @@ function getConeSVG(dir) {
 	}
 }
 
-function getFinishLineSVG(dir) {
-	if (dir === 'top') {
-		var tiles = '';
-		for (var i = 0; i < 18; i++) {
-			var x = 20 + i * 23;
-			var fill1 = (i % 2 === 0) ? '#ffffff' : '#111827';
-			var fill2 = (i % 2 === 0) ? '#111827' : '#ffffff';
-			tiles += `<rect x="${x}" y="36" width="23" height="18" fill="${fill1}"/>
-			          <rect x="${x}" y="54" width="23" height="18" fill="${fill2}"/>`;
+// 6-Biome Dynamic Level Progression & Procedural Road Engine
+const BIOMES = [
+	{
+		id: 'cyber_metropolis',
+		name: 'CYBER METROPOLIS',
+		subtitle: '⚡ NEON GRID EXPRESSWAY',
+		roadColor: '#0e121a',
+		curbTop: '#00e5ff',
+		curbBottom: '#ff0055',
+		laneDash: '#ffffff',
+		centerLine: '#ffea00',
+		shoulderColor: '#07090f',
+		tileColor: '#131a26',
+		glowIntensity: 1.0,
+		skyColor: '#06070c'
+	},
+	{
+		id: 'outrun_sunset',
+		name: 'OUTRUN SUNSET',
+		subtitle: '🌅 GOLDEN HOUR SPEEDWAY',
+		roadColor: '#170e24',
+		curbTop: '#ff7700',
+		curbBottom: '#ff007f',
+		laneDash: '#ffea77',
+		centerLine: '#ff0055',
+		shoulderColor: '#0d0714',
+		tileColor: '#241233',
+		glowIntensity: 1.1,
+		skyColor: '#15051e'
+	},
+	{
+		id: 'tokyo_midnight',
+		name: 'TOKYO DRIFT MIDNIGHT',
+		subtitle: '🌃 SHUTO HIGH-SPEED BELTWAY',
+		roadColor: '#0d1317',
+		curbTop: '#00ffaa',
+		curbBottom: '#8b5cf6',
+		laneDash: '#e0f2fe',
+		centerLine: '#00ffaa',
+		shoulderColor: '#06090c',
+		tileColor: '#101d24',
+		glowIntensity: 1.0,
+		skyColor: '#040d12'
+	},
+	{
+		id: 'solar_flare',
+		name: 'SOLAR FLARE DESERT',
+		subtitle: '🔥 SCORCHING CANYON RUNWAY',
+		roadColor: '#1c120c',
+		curbTop: '#ff3300',
+		curbBottom: '#ffaa00',
+		laneDash: '#fff7ed',
+		centerLine: '#ff3300',
+		shoulderColor: '#120a06',
+		tileColor: '#29170e',
+		glowIntensity: 1.2,
+		skyColor: '#170802'
+	},
+	{
+		id: 'neo_matrix',
+		name: 'NEO MATRIX GRID',
+		subtitle: '⚡ CYBER DRIVE SECTOR',
+		roadColor: '#061009',
+		curbTop: '#00ff66',
+		curbBottom: '#00e5ff',
+		laneDash: '#86efac',
+		centerLine: '#00ff66',
+		shoulderColor: '#030905',
+		tileColor: '#0c2113',
+		glowIntensity: 1.0,
+		skyColor: '#020d05'
+	},
+	{
+		id: 'cosmic_hyperway',
+		name: 'COSMIC HYPERWAY',
+		subtitle: '🌌 GRAND CHAMPION ORBITWAY',
+		roadColor: '#090921',
+		curbTop: '#e879f9',
+		curbBottom: '#38bdf8',
+		laneDash: '#fdf4ff',
+		centerLine: '#f43f5e',
+		shoulderColor: '#040411',
+		tileColor: '#171738',
+		glowIntensity: 1.2,
+		skyColor: '#050518'
+	}
+];
+
+var ROAD_TEXTURE_CACHE = {};
+
+function getBiomeForLevel(lvl) {
+	var index = Math.floor((lvl - 1) / 5) % BIOMES.length;
+	return BIOMES[index];
+}
+
+function hexToRgba(hex, alpha) {
+	var c = hex.replace('#', '');
+	if (c.length === 3) c = c[0] + c[0] + c[1] + c[1] + c[2] + c[2];
+	var num = parseInt(c, 16);
+	var r = (num >> 16) & 255;
+	var g = (num >> 8) & 255;
+	var b = num & 255;
+	return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function getRoadDataURL(dir, biome) {
+	var b = biome || BIOMES[0];
+	var key = dir + '_' + b.id;
+	if (ROAD_TEXTURE_CACHE[key]) return ROAD_TEXTURE_CACHE[key];
+
+	var canvas = document.createElement('canvas');
+	var ctx = canvas.getContext('2d');
+
+	if (dir === 'side') {
+		canvas.width = 1050;
+		canvas.height = 600;
+
+		// 1. Shoulder/Sidewalk Background
+		ctx.fillStyle = b.shoulderColor;
+		ctx.fillRect(0, 0, 1050, 600);
+
+		// Top & bottom sidewalk paving grid pattern
+		ctx.strokeStyle = b.tileColor;
+		ctx.lineWidth = 1;
+		for (var x = 0; x < 1050; x += 35) {
+			ctx.beginPath();
+			ctx.moveTo(x, 0); ctx.lineTo(x, 60);
+			ctx.moveTo(x, 540); ctx.lineTo(x, 600);
+			ctx.stroke();
 		}
-		return `<svg viewBox="0 0 450 100" width="450" height="100" style="display:block; width:100%; height:100%;">
-			<!-- Side Tower Beacons -->
-			<rect x="2" y="10" width="16" height="80" rx="3" fill="#0f172a" stroke="#00e5ff" stroke-width="2"/>
-			<circle cx="10" cy="22" r="5" fill="#ff0055"/>
-			<circle cx="10" cy="50" r="5" fill="#ffea00"/>
-			<circle cx="10" cy="78" r="5" fill="#00ff66"/>
+		for (var y = 0; y <= 60; y += 20) {
+			ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(1050, y); ctx.stroke();
+		}
+		for (var y = 540; y <= 600; y += 20) {
+			ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(1050, y); ctx.stroke();
+		}
+
+		// 2. Road Asphalt Surface
+		ctx.fillStyle = b.roadColor;
+		ctx.fillRect(0, 60, 1050, 480);
+
+		// Aggregate speckle grain
+		ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+		for (var i = 0; i < 600; i++) {
+			var gx = (i * 37) % 1050;
+			var gy = 60 + ((i * 59) % 480);
+			ctx.fillRect(gx, gy, 2, 1);
+		}
+
+		// Tire Wear Streaks down 4 lanes (lanes mid: 120, 240, 360, 480)
+		[120, 240, 360, 480].forEach(midY => {
+			var grad = ctx.createLinearGradient(0, midY - 30, 0, midY + 30);
+			grad.addColorStop(0, 'rgba(0,0,0,0)');
+			grad.addColorStop(0.5, 'rgba(0,0,0,0.22)');
+			grad.addColorStop(1, 'rgba(0,0,0,0)');
+			ctx.fillStyle = grad;
+			ctx.fillRect(0, midY - 30, 1050, 60);
+		});
+
+		// 3. Ambient Curb Glow
+		var topGlow = ctx.createLinearGradient(0, 60, 0, 115);
+		topGlow.addColorStop(0, hexToRgba(b.curbTop, 0.38));
+		topGlow.addColorStop(1, 'rgba(0,0,0,0)');
+		ctx.fillStyle = topGlow;
+		ctx.fillRect(0, 60, 1050, 55);
+
+		var btmGlow = ctx.createLinearGradient(0, 540, 0, 485);
+		btmGlow.addColorStop(0, hexToRgba(b.curbBottom, 0.38));
+		btmGlow.addColorStop(1, 'rgba(0,0,0,0)');
+		ctx.fillStyle = btmGlow;
+		ctx.fillRect(0, 485, 1050, 55);
+
+		// 4. Solid Neon Curb Stripes & Light Studs
+		ctx.strokeStyle = b.curbTop;
+		ctx.lineWidth = 4;
+		ctx.beginPath(); ctx.moveTo(0, 60); ctx.lineTo(1050, 60); ctx.stroke();
+
+		ctx.strokeStyle = b.curbBottom;
+		ctx.lineWidth = 4;
+		ctx.beginPath(); ctx.moveTo(0, 540); ctx.lineTo(1050, 540); ctx.stroke();
+
+		// Curb LED beacons every 105px (exact divisor)
+		for (var x = 0; x < 1050; x += 105) {
+			ctx.fillStyle = '#ffffff';
+			ctx.fillRect(x + 50, 58, 8, 4);
+			ctx.fillRect(x + 50, 538, 8, 4);
+		}
+
+		// 5. Dashed Lane Lines (105px cycle = dash 60px + gap 45px -> 10 seamless cycles in 1050)
+		ctx.strokeStyle = b.laneDash;
+		ctx.lineWidth = 2.5;
+		ctx.setLineDash([60, 45]);
+		ctx.beginPath(); ctx.moveTo(0, 180); ctx.lineTo(1050, 180); ctx.stroke();
+		ctx.beginPath(); ctx.moveTo(0, 420); ctx.lineTo(1050, 420); ctx.stroke();
+
+		// 6. Center Double Line & Reflector Studs (y=300)
+		ctx.strokeStyle = b.centerLine;
+		ctx.lineWidth = 2;
+		ctx.setLineDash([60, 45]);
+		ctx.beginPath(); ctx.moveTo(0, 297); ctx.lineTo(1050, 297); ctx.stroke();
+		ctx.beginPath(); ctx.moveTo(0, 303); ctx.lineTo(1050, 303); ctx.stroke();
+
+		ctx.setLineDash([]);
+		for (var x = 0; x < 1050; x += 105) {
+			ctx.fillStyle = b.centerLine;
+			ctx.beginPath(); ctx.arc(x + 50, 300, 3.5, 0, Math.PI * 2); ctx.fill();
+			ctx.fillStyle = '#ffffff';
+			ctx.beginPath(); ctx.arc(x + 50, 300, 1.5, 0, Math.PI * 2); ctx.fill();
+		}
+
+	} else {
+		// Top-Down Vertical Road (450 x 600)
+		canvas.width = 450;
+		canvas.height = 600;
+
+		// 1. Sidewalk Shoulders
+		ctx.fillStyle = b.shoulderColor;
+		ctx.fillRect(0, 0, 450, 600);
+
+		ctx.strokeStyle = b.tileColor;
+		ctx.lineWidth = 1;
+		for (var y = 0; y < 600; y += 30) {
+			ctx.beginPath();
+			ctx.moveTo(0, y); ctx.lineTo(45, y);
+			ctx.moveTo(405, y); ctx.lineTo(450, y);
+			ctx.stroke();
+		}
+		for (var x = 0; x <= 45; x += 15) {
+			ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 600); ctx.stroke();
+		}
+		for (var x = 405; x <= 450; x += 15) {
+			ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 600); ctx.stroke();
+		}
+
+		// 2. Road Surface
+		ctx.fillStyle = b.roadColor;
+		ctx.fillRect(45, 0, 360, 600);
+
+		// Speckle grain
+		ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+		for (var i = 0; i < 400; i++) {
+			var gx = 45 + ((i * 37) % 360);
+			var gy = (i * 59) % 600;
+			ctx.fillRect(gx, gy, 1, 2);
+		}
+
+		// Tire Wear Streaks down 3 lanes (lanes mid: 105, 225, 345)
+		[105, 225, 345].forEach(midX => {
+			var grad = ctx.createLinearGradient(midX - 25, 0, midX + 25, 0);
+			grad.addColorStop(0, 'rgba(0,0,0,0)');
+			grad.addColorStop(0.5, 'rgba(0,0,0,0.22)');
+			grad.addColorStop(1, 'rgba(0,0,0,0)');
+			ctx.fillStyle = grad;
+			ctx.fillRect(midX - 25, 0, 50, 600);
+		});
+
+		// 3. Ambient Curb Glow
+		var leftGlow = ctx.createLinearGradient(45, 0, 100, 0);
+		leftGlow.addColorStop(0, hexToRgba(b.curbTop, 0.38));
+		leftGlow.addColorStop(1, 'rgba(0,0,0,0)');
+		ctx.fillStyle = leftGlow;
+		ctx.fillRect(45, 0, 55, 600);
+
+		var rightGlow = ctx.createLinearGradient(405, 0, 350, 0);
+		rightGlow.addColorStop(0, hexToRgba(b.curbBottom, 0.38));
+		rightGlow.addColorStop(1, 'rgba(0,0,0,0)');
+		ctx.fillStyle = rightGlow;
+		ctx.fillRect(350, 0, 55, 600);
+
+		// 4. Solid Neon Curbs & Light Studs
+		ctx.strokeStyle = b.curbTop;
+		ctx.lineWidth = 4;
+		ctx.beginPath(); ctx.moveTo(45, 0); ctx.lineTo(45, 600); ctx.stroke();
+
+		ctx.strokeStyle = b.curbBottom;
+		ctx.lineWidth = 4;
+		ctx.beginPath(); ctx.moveTo(405, 0); ctx.lineTo(405, 600); ctx.stroke();
+
+		for (var y = 0; y < 600; y += 100) {
+			ctx.fillStyle = '#ffffff';
+			ctx.fillRect(43, y + 45, 4, 10);
+			ctx.fillRect(403, y + 45, 4, 10);
+		}
+
+		// 5. Vertical Dashed Lane Dividers (100px cycle = dash 60px + gap 40px -> 6 seamless cycles in 600)
+		ctx.strokeStyle = b.laneDash;
+		ctx.lineWidth = 2.5;
+		ctx.setLineDash([60, 40]);
+		ctx.beginPath(); ctx.moveTo(165, 0); ctx.lineTo(165, 600); ctx.stroke();
+		ctx.beginPath(); ctx.moveTo(285, 0); ctx.lineTo(285, 600); ctx.stroke();
+
+		ctx.setLineDash([]);
+		for (var y = 0; y < 600; y += 100) {
+			ctx.fillStyle = b.centerLine;
+			ctx.beginPath(); ctx.arc(165, y + 50, 3.5, 0, Math.PI * 2); ctx.fill();
+			ctx.beginPath(); ctx.arc(285, y + 50, 3.5, 0, Math.PI * 2); ctx.fill();
+			ctx.fillStyle = '#ffffff';
+			ctx.beginPath(); ctx.arc(165, y + 50, 1.5, 0, Math.PI * 2); ctx.fill();
+			ctx.beginPath(); ctx.arc(285, y + 50, 1.5, 0, Math.PI * 2); ctx.fill();
+		}
+	}
+
+	var dataURL = canvas.toDataURL('image/png');
+	ROAD_TEXTURE_CACHE[key] = dataURL;
+	return dataURL;
+}
+
+// In-World Overhead Racing Gantry & Breakable Checkered Finish Ribbon
+function getFinishLineSVG(dir, isBroken, biome) {
+	var b = biome || BIOMES[0];
+	if (dir === 'side') {
+		// Checker strip on road pavement (x: 76 to 106, y: 60 to 540)
+		var checkTiles = '';
+		for (var row = 0; row < 16; row++) {
+			var y = 60 + row * 30;
+			for (var col = 0; col < 2; col++) {
+				var x = 76 + col * 15;
+				var fill = ((row + col) % 2 === 0) ? '#ffffff' : '#111827';
+				checkTiles += `<rect x="${x}" y="${y}" width="15" height="30" fill="${fill}"/>`;
+			}
+		}
+
+		var ribbonSVG = '';
+		if (!isBroken) {
+			ribbonSVG = `
+				<g class="finish-ribbon">
+					<rect x="87" y="60" width="8" height="480" fill="#ffea00" stroke="#ff0055" stroke-width="1.5" opacity="0.95"/>
+					<line x1="91" y1="60" x2="91" y2="540" stroke="#000" stroke-width="4" stroke-dasharray="8,8"/>
+					<rect x="68" y="278" width="46" height="24" rx="4" fill="#ff0055" stroke="#ffff00" stroke-width="2"/>
+					<text x="91" y="294" text-anchor="middle" font-family="'Press Start 2P', monospace" font-size="8" fill="#ffffff" font-weight="bold">WIN</text>
+				</g>`;
+		} else {
+			ribbonSVG = `
+				<g class="ribbon-broken-top">
+					<path d="M 88,60 Q 75,180 48,250" stroke="#ffea00" stroke-width="7" fill="none"/>
+					<path d="M 88,60 Q 75,180 48,250" stroke="#000" stroke-width="3" stroke-dasharray="6,6" fill="none"/>
+				</g>
+				<g class="ribbon-broken-bottom">
+					<path d="M 88,540 Q 75,420 48,350" stroke="#ffea00" stroke-width="7" fill="none"/>
+					<path d="M 88,540 Q 75,420 48,350" stroke="#000" stroke-width="3" stroke-dasharray="6,6" fill="none"/>
+				</g>
+				<circle cx="90" cy="300" r="45" fill="url(#finishImpactGlow)" opacity="0.8"/>`;
+		}
+
+		return `<svg viewBox="0 0 180 600" width="180" height="600" style="display:block; width:100%; height:100%;">
+			<defs>
+				<linearGradient id="finishPylonGrad" x1="0" y1="0" x2="1" y2="0">
+					<stop offset="0%" stop-color="#0f172a"/>
+					<stop offset="50%" stop-color="#1e293b"/>
+					<stop offset="100%" stop-color="#090d16"/>
+				</linearGradient>
+				<radialGradient id="finishImpactGlow" cx="50%" cy="50%" r="50%">
+					<stop offset="0%" stop-color="#ffea00" stop-opacity="1"/>
+					<stop offset="60%" stop-color="#ff0055" stop-opacity="0.6"/>
+					<stop offset="100%" stop-color="#00e5ff" stop-opacity="0"/>
+				</radialGradient>
+				<filter id="neonFinishGlow" x="-20%" y="-20%" width="140%" height="140%">
+					<feGaussianBlur stdDeviation="3" result="glow"/>
+					<feMerge>
+						<feMergeNode in="glow"/>
+						<feMergeNode in="SourceGraphic"/>
+					</feMerge>
+				</filter>
+			</defs>
+
+			<!-- Road Pavement Checkered Band -->
+			<rect x="74" y="60" width="34" height="480" fill="#090d16" stroke="#ffea00" stroke-width="2"/>
+			${checkTiles}
+
+			<!-- Upper Gantry Pylon -->
+			<rect x="62" y="0" width="60" height="62" rx="4" fill="url(#finishPylonGrad)" stroke="${b.curbTop}" stroke-width="2"/>
+			<circle cx="74" cy="20" r="6" fill="#ff0055" class="finish-strobe-red"/>
+			<circle cx="92" cy="20" r="6" fill="#ffea00" class="finish-strobe-yellow"/>
+			<circle cx="110" cy="20" r="6" fill="#00ff66" class="finish-strobe-green"/>
+
+			<!-- Lower Gantry Pylon -->
+			<rect x="62" y="538" width="60" height="62" rx="4" fill="url(#finishPylonGrad)" stroke="${b.curbBottom}" stroke-width="2"/>
+			<circle cx="74" cy="580" r="6" fill="#00ff66" class="finish-strobe-green"/>
+			<circle cx="92" cy="580" r="6" fill="#ffea00" class="finish-strobe-yellow"/>
+			<circle cx="110" cy="580" r="6" fill="#ff0055" class="finish-strobe-red"/>
+
+			<!-- Steel Truss Tower Structure -->
+			<line x1="72" y1="62" x2="72" y2="538" stroke="#334155" stroke-width="3"/>
+			<line x1="112" y1="62" x2="112" y2="538" stroke="#334155" stroke-width="3"/>
 			
-			<rect x="432" y="10" width="16" height="80" rx="3" fill="#0f172a" stroke="#00e5ff" stroke-width="2"/>
-			<circle cx="440" cy="22" r="5" fill="#ff0055"/>
-			<circle cx="440" cy="50" r="5" fill="#ffea00"/>
-			<circle cx="440" cy="78" r="5" fill="#00ff66"/>
+			<!-- Truss Diagonal Struts -->
+			<path d="M 72,62 L 112,100 L 72,140 L 112,180 L 72,220 L 112,260 L 72,300 L 112,340 L 72,380 L 112,420 L 72,460 L 112,500 L 72,538" 
+			      stroke="#1e293b" stroke-width="2" fill="none"/>
 
-			<!-- Overhead Truss Bridge -->
-			<rect x="18" y="24" width="414" height="52" rx="4" fill="#090d16" stroke="#00e5ff" stroke-width="2"/>
-			
-			<!-- Checkered Grid -->
-			${tiles}
+			<!-- Ribbon Layer -->
+			${ribbonSVG}
 
-			<!-- Gold Border Lines -->
-			<line x1="20" y1="36" x2="430" y2="36" stroke="#ffea00" stroke-width="2"/>
-			<line x1="20" y1="72" x2="430" y2="72" stroke="#ffea00" stroke-width="2"/>
-
-			<!-- Central FINISH Header Badge -->
-			<rect x="160" y="4" width="130" height="26" rx="6" fill="#ff0055" stroke="#ffff00" stroke-width="2"/>
-			<text x="225" y="22" text-anchor="middle" font-family="'Press Start 2P', monospace" font-size="12" fill="#ffff00" font-weight="bold" letter-spacing="2">FINISH</text>
+			<!-- Central Overhead Glowing FINISH Marquee Sign -->
+			<g filter="url(#neonFinishGlow)">
+				<rect x="25" y="270" width="132" height="38" rx="8" fill="#090d16" stroke="#ffea00" stroke-width="2.5"/>
+				<rect x="29" y="274" width="124" height="30" rx="5" fill="#ff0055"/>
+				<text x="91" y="295" text-anchor="middle" font-family="'Press Start 2P', monospace" font-size="12" fill="#ffff00" font-weight="bold" letter-spacing="2">FINISH</text>
+			</g>
 		</svg>`;
 	} else {
-		var tiles = '';
-		for (var j = 0; j < 24; j++) {
-			var y = 20 + j * 23.5;
-			var fill1 = (j % 2 === 0) ? '#ffffff' : '#111827';
-			var fill2 = (j % 2 === 0) ? '#111827' : '#ffffff';
-			tiles += `<rect x="50" y="${y}" width="20" height="23.5" fill="${fill1}"/>
-			          <rect x="70" y="${y}" width="20" height="23.5" fill="${fill2}"/>`;
+		// Top-Down Vertical Finish Arch (Width: 450, Height: 180)
+		var checkTiles = '';
+		for (var col = 0; col < 15; col++) {
+			var x = 45 + col * 24;
+			for (var row = 0; row < 2; row++) {
+				var y = 72 + row * 18;
+				var fill = ((row + col) % 2 === 0) ? '#ffffff' : '#111827';
+				checkTiles += `<rect x="${x}" y="${y}" width="24" height="18" fill="${fill}"/>`;
+			}
 		}
-		return `<svg viewBox="0 0 140 600" width="140" height="600" style="display:block; width:100%; height:100%;">
-			<rect x="10" y="4" width="120" height="16" rx="3" fill="#0f172a" stroke="#00e5ff" stroke-width="2"/>
-			<rect x="10" y="580" width="120" height="16" rx="3" fill="#0f172a" stroke="#00e5ff" stroke-width="2"/>
 
-			<rect x="44" y="16" width="52" height="568" rx="4" fill="#090d16" stroke="#00e5ff" stroke-width="2"/>
+		var ribbonSVG = '';
+		if (!isBroken) {
+			ribbonSVG = `
+				<g class="finish-ribbon">
+					<rect x="45" y="78" width="360" height="8" fill="#ffea00" stroke="#ff0055" stroke-width="1.5" opacity="0.95"/>
+					<line x1="45" y1="82" x2="405" y2="82" stroke="#000" stroke-width="4" stroke-dasharray="8,8"/>
+					<rect x="202" y="68" width="46" height="24" rx="4" fill="#ff0055" stroke="#ffff00" stroke-width="2"/>
+					<text x="225" y="84" text-anchor="middle" font-family="'Press Start 2P', monospace" font-size="8" fill="#ffffff" font-weight="bold">WIN</text>
+				</g>`;
+		} else {
+			ribbonSVG = `
+				<g class="ribbon-broken-left">
+					<path d="M 45,82 Q 140,65 190,40" stroke="#ffea00" stroke-width="7" fill="none"/>
+					<path d="M 45,82 Q 140,65 190,40" stroke="#000" stroke-width="3" stroke-dasharray="6,6" fill="none"/>
+				</g>
+				<g class="ribbon-broken-right">
+					<path d="M 405,82 Q 310,65 260,40" stroke="#ffea00" stroke-width="7" fill="none"/>
+					<path d="M 405,82 Q 310,65 260,40" stroke="#000" stroke-width="3" stroke-dasharray="6,6" fill="none"/>
+				</g>
+				<circle cx="225" cy="82" r="45" fill="url(#finishImpactGlowV)" opacity="0.8"/>`;
+		}
 
-			${tiles}
+		return `<svg viewBox="0 0 450 180" width="450" height="180" style="display:block; width:100%; height:100%;">
+			<defs>
+				<radialGradient id="finishImpactGlowV" cx="50%" cy="50%" r="50%">
+					<stop offset="0%" stop-color="#ffea00" stop-opacity="1"/>
+					<stop offset="60%" stop-color="#ff0055" stop-opacity="0.6"/>
+					<stop offset="100%" stop-color="#00e5ff" stop-opacity="0"/>
+				</radialGradient>
+				<filter id="neonFinishGlowV" x="-20%" y="-20%" width="140%" height="140%">
+					<feGaussianBlur stdDeviation="3" result="glow"/>
+					<feMerge>
+						<feMergeNode in="glow"/>
+						<feMergeNode in="SourceGraphic"/>
+					</feMerge>
+				</filter>
+			</defs>
 
-			<line x1="50" y1="20" x2="50" y2="580" stroke="#ffea00" stroke-width="2"/>
-			<line x1="90" y1="20" x2="90" y2="580" stroke="#ffea00" stroke-width="2"/>
+			<!-- Road Checkered Crossing Band -->
+			<rect x="45" y="70" width="360" height="40" rx="3" fill="#090d16" stroke="#ffea00" stroke-width="2"/>
+			${checkTiles}
 
-			<rect x="15" y="270" width="110" height="40" rx="6" fill="#ff0055" stroke="#ffff00" stroke-width="2"/>
-			<text x="70" y="296" text-anchor="middle" font-family="'Press Start 2P', monospace" font-size="11" fill="#ffff00" font-weight="bold" letter-spacing="1">FINISH</text>
+			<!-- Left Side Tower Beacon -->
+			<rect x="6" y="20" width="38" height="130" rx="4" fill="#0f172a" stroke="${b.curbTop}" stroke-width="2"/>
+			<circle cx="25" cy="40" r="7" fill="#ff0055" class="finish-strobe-red"/>
+			<circle cx="25" cy="85" r="7" fill="#ffea00" class="finish-strobe-yellow"/>
+			<circle cx="25" cy="130" r="7" fill="#00ff66" class="finish-strobe-green"/>
+
+			<!-- Right Side Tower Beacon -->
+			<rect x="406" y="20" width="38" height="130" rx="4" fill="#0f172a" stroke="${b.curbBottom}" stroke-width="2"/>
+			<circle cx="425" cy="40" r="7" fill="#00ff66" class="finish-strobe-green"/>
+			<circle cx="425" cy="85" r="7" fill="#ffea00" class="finish-strobe-yellow"/>
+			<circle cx="425" cy="130" r="7" fill="#ff0055" class="finish-strobe-red"/>
+
+			<!-- Overhead Truss Girder Bridge -->
+			<rect x="44" y="25" width="362" height="30" rx="4" fill="#090d16" stroke="#00e5ff" stroke-width="2"/>
+			
+			<!-- Ribbon Layer -->
+			${ribbonSVG}
+
+			<!-- Central Illuminated FINISH Header Marquee -->
+			<g filter="url(#neonFinishGlowV)">
+				<rect x="155" y="16" width="140" height="38" rx="8" fill="#090d16" stroke="#ffff00" stroke-width="2.5"/>
+				<rect x="159" y="20" width="132" height="30" rx="5" fill="#ff0055"/>
+				<text x="225" y="41" text-anchor="middle" font-family="'Press Start 2P', monospace" font-size="12" fill="#ffff00" font-weight="bold" letter-spacing="2">FINISH</text>
+			</g>
 		</svg>`;
 	}
 }
@@ -563,7 +1005,7 @@ function setupIntro() {
 	var introScr = document.getElementById('introScreen');
 	if (introScr) {
 		introScr.style.display = 'block';
-		introScr.style.backgroundImage = 'url("streetside.jpg")';
+		introScr.style.backgroundImage = 'url("' + getRoadDataURL('side', BIOMES[0]) + '")';
 	}
 	if (document.getElementById('titleHeader')) document.getElementById('titleHeader').style.display = 'block';
 	if (document.getElementById('titleSub')) document.getElementById('titleSub').style.display = 'block';
@@ -712,7 +1154,7 @@ function introFinished() {
 
 function showBeginButton() {
 	var introScr = document.getElementById('introScreen');
-	if (introScr) introScr.style.backgroundImage = 'url("streetside.jpg")';
+	if (introScr) introScr.style.backgroundImage = 'url("' + getRoadDataURL('side', BIOMES[0]) + '")';
 	var introVid = document.getElementById('Intro');
 	if (introVid) { introVid.pause(); introVid.style.display = 'none'; }
 	var sndIntro = document.getElementById('sndIntro');
@@ -746,7 +1188,8 @@ function togglePause() {
 	if (isPaused) {
 		if (pauseModal) {
 			var pauseStats = document.getElementById('pauseStats');
-			if (pauseStats) pauseStats.innerHTML = 'STAGE: LEVEL ' + currentLevel + '/99<br>SCORE: ' + score;
+			var b = getBiomeForLevel(currentLevel);
+			if (pauseStats) pauseStats.innerHTML = 'STAGE ' + currentLevel + '/99 • ' + b.name + '<br>SCORE: ' + score;
 			pauseModal.style.display = 'flex';
 		}
 		if (sndDriving) sndDriving.pause();
@@ -774,14 +1217,15 @@ function showStageBanner(lvl) {
 	var bannerSub = document.getElementById('stageBannerSub');
 	if (!banner) return;
 
+	var b = getBiomeForLevel(lvl);
 	var isVert = (lvl % 2 === 0);
-	if (bannerText) bannerText.innerText = 'STAGE ' + lvl + ': GO!';
-	if (bannerSub) bannerSub.innerText = isVert ? '⚡ 3-LANE EXPRESSWAY • REACH FINISH LINE!' : '⚡ HIGH-OCTANE SPEEDWAY • REACH FINISH LINE!';
+	if (bannerText) bannerText.innerText = 'STAGE ' + lvl + ' • ' + b.name;
+	if (bannerSub) bannerSub.innerText = b.subtitle + (isVert ? ' ⚡ (3-LANE VERTICAL)' : ' ⚡ (4-LANE SPEEDWAY)');
 
 	banner.classList.add('show');
 	setTimeout(function() {
 		banner.classList.remove('show');
-	}, 1300);
+	}, 1500);
 }
 
 function showFinalStretchBanner() {
@@ -791,7 +1235,7 @@ function showFinalStretchBanner() {
 	if (!banner) return;
 
 	if (bannerText) bannerText.innerText = '🏁 FINAL STRETCH!';
-	if (bannerSub) bannerSub.innerText = 'CROSS THE CHECKERED LINE TO WIN!';
+	if (bannerSub) bannerSub.innerText = 'BREAK THE CHECKERED RIBBON TO WIN!';
 
 	banner.classList.add('show');
 	setTimeout(function() {
@@ -806,7 +1250,7 @@ function startCampaign() {
 	startStage(1);
 }
 
-// Particle Engine
+// Particle Engine (Explosions, Nitro Fire, Spinout Smoke, Confetti)
 function startParticleLoop() {
 	var canvas = document.getElementById('particleCanvas');
 	if (!canvas) return;
@@ -830,6 +1274,15 @@ function startParticleLoop() {
 				ctx.font = 'bold 15px "Press Start 2P", monospace';
 				ctx.fillStyle = `rgba(255, 234, 0, ${p.life})`;
 				ctx.fillText(p.text, p.x, p.y);
+			} else if (p.isConfetti) {
+				p.vy += 0.22; // Confetti flutter gravity
+				p.angle += p.vAngle;
+				ctx.save();
+				ctx.translate(p.x, p.y);
+				ctx.rotate(p.angle);
+				ctx.fillStyle = p.color.replace('ALPHA', p.life);
+				ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+				ctx.restore();
 			} else {
 				ctx.beginPath();
 				ctx.arc(p.x, p.y, Math.max(1, p.size * p.life), 0, Math.PI * 2);
@@ -838,6 +1291,34 @@ function startParticleLoop() {
 			}
 		}
 	}, 30);
+}
+
+function spawnConfettiParticles(x, y) {
+	var colors = [
+		'rgba(255, 234, 0, ALPHA)',  // Gold
+		'rgba(0, 229, 255, ALPHA)',  // Cyan
+		'rgba(255, 0, 85, ALPHA)',   // Magenta
+		'rgba(0, 255, 102, ALPHA)',  // Lime
+		'rgba(255, 255, 255, ALPHA)',// White
+		'rgba(255, 119, 0, ALPHA)'   // Orange
+	];
+	for (var i = 0; i < 55; i++) {
+		var angle = Math.random() * Math.PI * 2;
+		var speed = Math.random() * 12 + 4;
+		particles.push({
+			x: x, y: y,
+			vx: Math.cos(angle) * speed,
+			vy: Math.sin(angle) * speed - 5, // Initial upward burst
+			w: Math.random() * 8 + 5,
+			h: Math.random() * 6 + 4,
+			angle: Math.random() * Math.PI,
+			vAngle: (Math.random() - 0.5) * 0.35,
+			life: 1.0,
+			decay: Math.random() * 0.02 + 0.015,
+			color: colors[Math.floor(Math.random() * colors.length)],
+			isConfetti: true
+		});
+	}
 }
 
 function spawnExplosionParticles(x, y) {
@@ -1051,6 +1532,9 @@ function startStage(lvlNum) {
 	var oilCount = currentLevel >= 2 ? Math.min(4, 1 + Math.floor(currentLevel / 6)) : 0;
 	var rivalCount = Math.min(4, 1 + Math.floor(currentLevel / 4));
 
+	var currentBiome = getBiomeForLevel(currentLevel);
+	var roadDataURL = getRoadDataURL(isVertical ? 'top' : 'side', currentBiome);
+
 	startParticleLoop();
 	showStageBanner(currentLevel);
 
@@ -1061,11 +1545,11 @@ function startStage(lvlNum) {
 		gameScreen2.style.width = GS_WIDTH2 + 'px';
 		gameScreen2.style.height = GS_HEIGHT2 + 'px';
 
-		bg1 = document.createElement('IMG'); bg1.className = 'bgObject'; bg1.src = 'streetvert.jpg';
+		bg1 = document.createElement('IMG'); bg1.className = 'bgObject'; bg1.src = roadDataURL;
 		bg1.style.width = '450px'; bg1.style.height = '600px'; bg1.style.left = '0px'; bg1.style.top = '0px';
 		gameScreen2.appendChild(bg1);
 
-		bg2 = document.createElement('IMG'); bg2.className = 'bgObject'; bg2.src = 'streetvert.jpg';
+		bg2 = document.createElement('IMG'); bg2.className = 'bgObject'; bg2.src = roadDataURL;
 		bg2.style.width = '450px'; bg2.style.height = '600px'; bg2.style.left = '0px'; bg2.style.top = '-600px';
 		gameScreen2.appendChild(bg2);
 
@@ -1107,16 +1591,7 @@ function startStage(lvlNum) {
 			placePowerup(pup, true, i, baseSpeed); powerups[i] = pup;
 		}
 
-		var finishLine = document.createElement('div');
-		finishLine.className = 'finishObject';
-		finishLine.style.width = '450px';
-		finishLine.style.height = '100px';
-		finishLine.style.left = '0px';
-		finishLine.style.top = '0px';
-		finishLine.style.opacity = '0';
-		finishLine.innerHTML = getFinishLineSVG('top');
-		gameScreen2.appendChild(finishLine);
-		finish[1] = finishLine;
+		finish = [];
 
 		gameTimer = setInterval(function() { gameloopVerticalProgressive(baseSpeed); }, 30);
 
@@ -1127,11 +1602,11 @@ function startStage(lvlNum) {
 		gameScreen.style.width = GS_WIDTH + 'px';
 		gameScreen.style.height = GS_HEIGHT + 'px';
 
-		bg1 = document.createElement('IMG'); bg1.className = 'bgObject'; bg1.src = 'streetside.png';
+		bg1 = document.createElement('IMG'); bg1.className = 'bgObject'; bg1.src = roadDataURL;
 		bg1.style.width = '1050px'; bg1.style.height = '600px'; bg1.style.left = '0px'; bg1.style.top = '0px';
 		gameScreen.appendChild(bg1);
 
-		bg2 = document.createElement('IMG'); bg2.className = 'bgObject'; bg2.src = 'streetside.png';
+		bg2 = document.createElement('IMG'); bg2.className = 'bgObject'; bg2.src = roadDataURL;
 		bg2.style.width = '1050px'; bg2.style.height = '600px'; bg2.style.left = '1050px'; bg2.style.top = '0px';
 		gameScreen.appendChild(bg2);
 
@@ -1173,16 +1648,7 @@ function startStage(lvlNum) {
 			placePowerup(pup, false, i, baseSpeed); powerups[i] = pup;
 		}
 
-		var finishLine = document.createElement('div');
-		finishLine.className = 'finishObject';
-		finishLine.style.width = '140px';
-		finishLine.style.height = '600px';
-		finishLine.style.left = '910px';
-		finishLine.style.top = '0px';
-		finishLine.style.opacity = '0';
-		finishLine.innerHTML = getFinishLineSVG('side');
-		gameScreen.appendChild(finishLine);
-		finish[0] = finishLine;
+		finish = [];
 
 		gameTimer = setInterval(function() { gameloopHorizontalProgressive(baseSpeed); }, 30);
 	}
@@ -1445,7 +1911,7 @@ function gameloopHorizontalProgressive(baseSpeed) {
 		}
 	}
 
-	// Track Progress & Fixed Finish Line
+	// Track Progress & In-World Finish Line Spawning
 	var scrollDelta = baseSpeed * curSpeedMult * timeSlowMult;
 	if (stageRemainingDistance > 0) {
 		stageRemainingDistance -= scrollDelta;
@@ -1453,16 +1919,41 @@ function gameloopHorizontalProgressive(baseSpeed) {
 		if (stageRemainingDistance <= 0) {
 			stageRemainingDistance = 0;
 			isFinalStretch = true;
-			if (finish[0]) {
-				finish[0].style.opacity = '1';
-			}
 			showFinalStretchBanner();
+
+			if (!finish[0]) {
+				var finishLine = document.createElement('div');
+				finishLine.className = 'finishObject';
+				finishLine.style.width = '180px';
+				finishLine.style.height = '600px';
+				finishLine.style.left = (GS_WIDTH + 60) + 'px';
+				finishLine.style.top = '0px';
+				var b = getBiomeForLevel(currentLevel);
+				finishLine.innerHTML = getFinishLineSVG('side', false, b);
+				finishLine.isBroken = false;
+				gameScreen.appendChild(finishLine);
+				finish[0] = finishLine;
+			}
 		}
 	}
 
+	// In-World Finish Arch Approach & Break Physics
 	if (isFinalStretch && finish[0]) {
-		if (hittest(finish[0], car) || parseInt(car.style.left) >= 860) {
-			handleStageClear();
+		var curX = parseFloat(finish[0].style.left);
+		var newX = curX - (baseSpeed * curSpeedMult * timeSlowMult);
+		finish[0].style.left = newX + 'px';
+
+		var carLeft = parseInt(car.style.left);
+		if (!finish[0].isBroken && (hittest(finish[0], car) || (newX + 90) <= carLeft + 80)) {
+			finish[0].isBroken = true;
+			var b = getBiomeForLevel(currentLevel);
+			finish[0].innerHTML = getFinishLineSVG('side', true, b);
+			spawnConfettiParticles(carLeft + 88, parseInt(car.style.top) + 22);
+			playSynthSound('victory_chime');
+
+			setTimeout(function() {
+				if (isGameActive) handleStageClear();
+			}, 500);
 		}
 	}
 }
@@ -1622,7 +2113,7 @@ function gameloopVerticalProgressive(baseSpeed) {
 		}
 	}
 
-	// Track Progress & Fixed Finish Line at Top of Screen
+	// Track Progress & In-World Vertical Finish Line Spawning
 	var scrollDelta = (baseSpeed * 1.5) * curSpeedMult * timeSlowMult;
 	if (stageRemainingDistance > 0) {
 		stageRemainingDistance -= scrollDelta;
@@ -1630,16 +2121,41 @@ function gameloopVerticalProgressive(baseSpeed) {
 		if (stageRemainingDistance <= 0) {
 			stageRemainingDistance = 0;
 			isFinalStretch = true;
-			if (finish[1]) {
-				finish[1].style.opacity = '1';
-			}
 			showFinalStretchBanner();
+
+			if (!finish[1]) {
+				var finishLine = document.createElement('div');
+				finishLine.className = 'finishObject';
+				finishLine.style.width = '450px';
+				finishLine.style.height = '180px';
+				finishLine.style.left = '0px';
+				finishLine.style.top = '-200px';
+				var b = getBiomeForLevel(currentLevel);
+				finishLine.innerHTML = getFinishLineSVG('top', false, b);
+				finishLine.isBroken = false;
+				gameScreen2.appendChild(finishLine);
+				finish[1] = finishLine;
+			}
 		}
 	}
 
+	// In-World Finish Arch Approach & Break Physics
 	if (isFinalStretch && finish[1]) {
-		if (hittest(finish[1], car) || parseInt(car.style.top) <= 85) {
-			handleStageClear();
+		var curY = parseFloat(finish[1].style.top);
+		var newY = curY + ((baseSpeed * 1.5) * curSpeedMult * timeSlowMult);
+		finish[1].style.top = newY + 'px';
+
+		var carTop = parseInt(car.style.top);
+		if (!finish[1].isBroken && (hittest(finish[1], car) || (newY + 84) >= carTop)) {
+			finish[1].isBroken = true;
+			var b = getBiomeForLevel(currentLevel);
+			finish[1].innerHTML = getFinishLineSVG('top', true, b);
+			spawnConfettiParticles(parseInt(car.style.left) + 22, carTop);
+			playSynthSound('victory_chime');
+
+			setTimeout(function() {
+				if (isGameActive) handleStageClear();
+			}, 500);
 		}
 	}
 }

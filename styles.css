@@ -286,10 +286,72 @@ body {
 	position: absolute;
 	z-index: 7;
 	pointer-events: none;
-	opacity: 0;
+	opacity: 1;
 	transform: translateZ(0);
-	will-change: opacity;
-	transition: opacity 0.25s ease-out;
+	will-change: left, top;
+}
+
+/* Finish Line Strobe Lights & Ribbon Animations */
+.finish-strobe-red {
+	animation: finishBlinkRed 0.35s infinite alternate;
+}
+.finish-strobe-yellow {
+	animation: finishBlinkYellow 0.25s infinite alternate;
+}
+.finish-strobe-green {
+	animation: finishBlinkGreen 0.3s infinite alternate;
+}
+
+@keyframes finishBlinkRed {
+	0% { fill: #450014; filter: drop-shadow(0 0 1px #ff0055); }
+	100% { fill: #ff0055; filter: drop-shadow(0 0 10px #ff0055); }
+}
+@keyframes finishBlinkYellow {
+	0% { fill: #554400; filter: drop-shadow(0 0 1px #ffea00); }
+	100% { fill: #ffff00; filter: drop-shadow(0 0 12px #ffea00); }
+}
+@keyframes finishBlinkGreen {
+	0% { fill: #003314; filter: drop-shadow(0 0 1px #00ff66); }
+	100% { fill: #00ff66; filter: drop-shadow(0 0 10px #00ff66); }
+}
+
+.finish-ribbon {
+	animation: ribbonFlutter 0.7s infinite ease-in-out alternate;
+	transform-origin: center;
+}
+@keyframes ribbonFlutter {
+	0% { transform: scaleX(1) scaleY(1); }
+	100% { transform: scaleX(1.02) scaleY(0.98); }
+}
+
+.ribbon-broken-top {
+	animation: ribbonSnapTop 0.5s forwards ease-out;
+}
+.ribbon-broken-bottom {
+	animation: ribbonSnapBottom 0.5s forwards ease-out;
+}
+.ribbon-broken-left {
+	animation: ribbonSnapLeft 0.5s forwards ease-out;
+}
+.ribbon-broken-right {
+	animation: ribbonSnapRight 0.5s forwards ease-out;
+}
+
+@keyframes ribbonSnapTop {
+	0% { transform: translateY(0); opacity: 1; }
+	100% { transform: translateY(-35px) rotate(-10deg); opacity: 0.8; }
+}
+@keyframes ribbonSnapBottom {
+	0% { transform: translateY(0); opacity: 1; }
+	100% { transform: translateY(35px) rotate(10deg); opacity: 0.8; }
+}
+@keyframes ribbonSnapLeft {
+	0% { transform: translateX(0); opacity: 1; }
+	100% { transform: translateX(-35px) rotate(-10deg); opacity: 0.8; }
+}
+@keyframes ribbonSnapRight {
+	0% { transform: translateX(0); opacity: 1; }
+	100% { transform: translateX(35px) rotate(10deg); opacity: 0.8; }
 }
 
 .oil-slick {

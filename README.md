@@ -16,6 +16,14 @@
   - 🟡 **Gold Phantom**: **+25% Score Multiplier**.
   - 🟢 **Cyber Lightning**: **Free Energy Shield every stage**.
 - 🏆 **99-Stage Progressive Grand Prix**: Single continuous arcade campaign alternating between high-speed horizontal speedways and vertical 3-lane expressways.
+- 🌌 **6 Dynamic Racing Biomes**: Procedural cache-proof road surfaces evolving every 5 stages:
+  - 🏙️ **Cyber Metropolis**: Obsidian asphalt & neon cyan/magenta curbs.
+  - 🌅 **Outrun Sunset**: Indigo twilight speedway & radiant sunset gold/pink curbs.
+  - 🌃 **Tokyo Drift Midnight**: Wet charcoal expressway & emerald green/violet curbs.
+  - 🔥 **Solar Flare Desert**: Scorching canyon tarmac & blazing crimson/gold curbs.
+  - ⚡ **Neo Matrix Grid**: Pitch black cyber road & ultra-bright matrix lime laser rails.
+  - 🌌 **Cosmic Hyperway**: Deep sapphire speedway & iridescent starfield curbs.
+- 🏁 **Dynamic In-World Finish Line**: Overhead illuminated truss racing gantry with flashing strobe beacons and a **breakable checkered ribbon** that bursts into golden/cyan confetti cannons when struck!
 - 🏎️ **Dynamic AI Rival Traffic**: Weave past civilian and competitor racers who switch lanes and block your path.
 - 📊 **Real-Time HUD Track Progress Bar**: Visual distance indicator (`START ───🏎️───🏁 FINISH`) showing your exact progress to the finish line.
 - 📖 **In-Game How To Play & Controls Guide**: Accessible directly from the title screen or pause menu with arcade keycap diagrams.
