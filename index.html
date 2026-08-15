@@ -107,12 +107,13 @@
 			
 			<div class="instructions-scroll">
 				<div class="instruction-card highlight-goal">
-					<div class="card-title">🏁 THE OBJECTIVE: HOW TO WIN</div>
+					<div class="card-title">🏁 THE OBJECTIVE & 1-LIFE PERMADEATH</div>
 					<p>Steer your high-performance racer through <strong>99 challenging arcade stages</strong>!</p>
 					<ul>
-						<li><strong>Stage Victory:</strong> Survive and reach the <strong>Checkered Finish Line (🏁)</strong> at the end of the stage distance without crashing.</li>
-						<li><strong>Campaign Victory:</strong> Clear all 99 levels to be crowned the <strong>Grand Champion</strong> and secure your legendary High Score!</li>
-						<li><strong>Track Progress:</strong> Watch the <strong>TRACK</strong> bar on the top HUD to monitor your distance to the finish line.</li>
+						<li><strong>💀 1-Life Permadeath:</strong> No checkpoints or stage retries! One fatal crash ends your entire run and resets progress back to Level 1.</li>
+						<li><strong>Stage Victory:</strong> Survive and cross the <strong>Checkered Finish Line (🏁)</strong> at the end of each track.</li>
+						<li><strong>Campaign Victory:</strong> Conquer all 99 stages in a single continuous run to become the <strong>Grand Champion</strong>!</li>
+						<li><strong>Track Progress:</strong> Watch the <strong>TRACK</strong> bar on the top HUD to monitor distance to the finish line.</li>
 					</ul>
 				</div>
 
@@ -180,7 +181,7 @@
 			</div>
 			<div class="pause-actions">
 				<button class="modal-btn" onclick="togglePause()">RESUME RACE</button>
-				<button class="modal-btn modal-btn-secondary" onclick="restartCurrentLevel()">RESTART STAGE</button>
+				<button class="modal-btn modal-btn-secondary" onclick="startNewRun()">💀 FORFEIT & RESTART (LVL 1)</button>
 				<button class="modal-btn modal-btn-secondary" onclick="returnToTitle()">EXIT TO MENU</button>
 			</div>
 		</div>
@@ -189,16 +190,18 @@
 		<div id="gameScreen"></div>
 		<div id="gameScreen2"></div>
 
-		<!-- Game Over Modal -->
+		<!-- Game Over Modal (Permadeath) -->
 		<div id="deathModal" class="arcade-modal">
-			<div class="modal-title">💥 CRASHED!</div>
+			<div class="modal-title">💀 CRASHED - RUN OVER!</div>
 			<div id="deathStats" class="modal-stats">
-				STAGE: LEVEL 1/99<br>
-				SCORE: 0<br>
-				BEST: 0
+				STAGES SURVIVED: 0 / 99<br>
+				FINAL RUN SCORE: 0<br>
+				ALL-TIME BEST: 0
 			</div>
-			<button id="btnDeathRestart" class="modal-btn" onclick="restartCurrentLevel()">RETRY STAGE</button>
-			<button class="modal-btn modal-btn-secondary" onclick="returnToTitle()">GARAGE MENU</button>
+			<div class="pause-actions">
+				<button id="btnDeathRestart" class="modal-btn" onclick="startNewRun()">🏁 START NEW RUN (LVL 1)</button>
+				<button class="modal-btn modal-btn-secondary" onclick="returnToTitle()">GARAGE MENU</button>
+			</div>
 		</div>
 
 		<!-- Level Complete Modal -->

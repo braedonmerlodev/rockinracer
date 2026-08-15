@@ -18,7 +18,7 @@ var finish = [];
 var particles = [];
 
 // Game Stats & State
-var currentLevel = parseInt(localStorage.getItem('rockinracer_currentlevel') || '1');
+var currentLevel = 1;
 var score = 0;
 var highScore = parseInt(localStorage.getItem('rockinracer_highscore') || '0');
 var selectedCar = localStorage.getItem('rockinracer_selectedcar') || 'red';
@@ -260,6 +260,10 @@ function setupIntro() {
 	if (document.getElementById('deathModal')) document.getElementById('deathModal').style.display = 'none';
 	if (document.getElementById('winModal')) document.getElementById('winModal').style.display = 'none';
 	
+	currentLevel = 1;
+	score = 0;
+	updateScoreDisplay();
+	updateLevelDisplay();
 	renderCarPreviews();
 	chooseCar(selectedCar);
 	updateHighScoreDisplay();
@@ -679,7 +683,6 @@ function placeRivalCarVertical(rc, index, baseSpeed) {
 // Single Progressive Stage Launcher (Levels 1 to 99)
 function startStage(lvlNum) {
 	currentLevel = Math.max(1, Math.min(99, lvlNum));
-	localStorage.setItem('rockinracer_currentlevel', String(currentLevel));
 
 	isGameActive = true;
 	isPaused = false;
@@ -892,9 +895,10 @@ function handleCrash() {
 		updateHighScoreDisplay();
 	}
 
+	var stagesSurvived = currentLevel - 1;
 	var statsEl = document.getElementById('deathStats');
 	if (statsEl) {
-		statsEl.innerHTML = 'STAGE: LEVEL ' + currentLevel + '/99<br>SCORE: ' + score + '<br>BEST: ' + highScore;
+		statsEl.innerHTML = 'STAGES SURVIVED: ' + stagesSurvived + ' / 99<br>FINAL RUN SCORE: ' + score + '<br>ALL-TIME BEST: ' + highScore;
 	}
 	var modal = document.getElementById('deathModal');
 	if (modal) modal.style.display = 'flex';
@@ -924,8 +928,15 @@ function handleStageClear() {
 	if (modal) modal.style.display = 'flex';
 }
 
+function startNewRun() {
+	getAudioCtx();
+	currentLevel = 1;
+	score = 0;
+	startStage(1);
+}
+
 function restartCurrentLevel() {
-	startStage(currentLevel);
+	startNewRun();
 }
 
 function nextLevel() {
